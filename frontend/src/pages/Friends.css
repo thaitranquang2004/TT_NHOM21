@@ -1,0 +1,123 @@
+/* Container chung cho các trang */
+.page-container {
+  max-width: 800px;
+  margin: 20px auto; /* Căn giữa và tạo khoảng cách */
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.page-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Form tìm kiếm */
+.search-form {
+  display: flex; /* Đặt input và button trên cùng 1 hàng */
+  margin-bottom: 20px;
+  gap: 10px; /* Khoảng cách giữa input và button */
+}
+
+.search-input {
+  flex-grow: 1; /* Input chiếm phần lớn không gian */
+  padding: 12px 15px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.search-button {
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-button:hover {
+  background-color: #0056b3;
+}
+
+/* Danh sách bạn bè */
+.friend-list {
+  list-style-type: none; /* Bỏ dấu chấm của <li> */
+  padding: 0;
+  margin: 0;
+}
+
+/* Từng "item" trong danh sách */
+.friend-item {
+  display: flex;
+  justify-content: space-between; /* Đẩy tên và nút ra 2 phía */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0; /* Viền mờ ngăn cách */
+}
+
+.friend-item:last-child {
+  border-bottom: none; /* Bỏ viền cho item cuối */
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column; /* Tên ở trên, username ở dưới */
+}
+
+.friend-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d2129;
+}
+
+.friend-username {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Nút hành động */
+.friend-actions {
+  min-width: 100px; /* Đảm bảo các nút có độ rộng tối thiểu */
+  text-align: right;
+}
+
+/* Style chung cho các nút (cả Link và Button) */
+.button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  text-decoration: none; /* Cho <Link> */
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+
+.button:hover {
+  opacity: 0.85;
+}
+
+/* Nút Chat (xanh dương) */
+.button-chat {
+  background-color: #007bff;
+}
+
+/* Nút Add (xanh lá) */
+.button-add {
+  background-color: #28a745;
+}

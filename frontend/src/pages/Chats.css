@@ -1,0 +1,122 @@
+/* Chúng ta nên có 1 file CSS chung, 
+  nhưng để đơn giản, tôi sẽ copy lại các class
+  từ Friends.css để component này tự hoạt động.
+*/
+
+/* Container chung cho các trang */
+.page-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.page-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Style chung cho các nút */
+.button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+  margin-bottom: 20px; /* Thêm khoảng cách */
+}
+
+.button:hover {
+  opacity: 0.85;
+}
+
+/* Nút tạo chat (xanh lá) */
+.button-create {
+  background-color: #28a745;
+}
+
+/* --- Style cho Danh sách Chat --- */
+.chat-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Bọc <li> bằng <Link> nên cần reset style */
+.chat-item-link {
+  text-decoration: none;
+  color: inherit; /* Kế thừa màu chữ */
+}
+
+/* Từng item trong danh sách chat */
+.chat-item {
+  display: flex;
+  align-items: center; /* Căn giữa theo chiều dọc */
+  padding: 12px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.chat-item:last-child {
+  border-bottom: none;
+}
+
+.chat-item:hover {
+  background-color: #f9f9f9; /* Hiệu ứng khi di chuột */
+}
+
+/* Vòng tròn Avatar (placeholder) */
+.chat-avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  min-width: 50px; /* Đảm bảo không bị co lại */
+  border-radius: 50%;
+  background-color: #e9ecef; /* Màu xám nhạt */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #495057;
+  margin-right: 15px;
+  text-transform: uppercase;
+}
+
+/* Thông tin tên chat */
+.chat-info {
+  flex-grow: 1; /* Chiếm hết không gian còn lại */
+  overflow: hidden; /* Ngăn text tràn */
+}
+
+.chat-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d2129;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Huy hiệu (badge) tin nhắn chưa đọc */
+.chat-unread-badge {
+  background-color: #e74c3c; /* Màu đỏ */
+  color: white;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%; /* Bo tròn */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 2px;
+  margin-left: 10px;
+}

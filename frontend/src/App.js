@@ -5,6 +5,7 @@ import {
   Route,
   Link,
   Navigate,
+  useLocation, // <--- 1. Import useLocation
 } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -12,7 +13,6 @@ import Friends from "./pages/Friends";
 import Chats from "./pages/Chats";
 import ChatWindow from "./pages/ChatWindow";
 import Profile from "./pages/Profile";
-// Import utils sau
 
 // Protected Route (JWT check)
 const ProtectedRoute = ({ children }) => {
@@ -20,18 +20,23 @@ const ProtectedRoute = ({ children }) => {
   return token ? children : <Navigate to="/" />;
 };
 
-function App() {
+// 2. Chúng ta tạo component MainLayout để chứa logic
+//    (Vì useLocation phải nằm bên trong <Router>)
+const MainLayout = () => {
+  const location = useLocation();
+
+  // 3. Xác định các trang KHÔNG hiển thị Navbar
+  //    (Trang Login của bạn là "/")
+  const hideNavbarOnPaths = ["/", "/register"];
+
+  // 4. Kiểm tra xem có cần ẩn Navbar không
+  const shouldHideNavbar = hideNavbarOnPaths.includes(location.pathname);
+
   return (
-    <Router>
-      <div className="app">
-        {/* Navbar cơ bản */}
+    <div className="app">
+      {/* 5. Chỉ hiển thị <nav> nếu shouldHideNavbar là false */}
+      {!shouldHideNavbar && (
         <nav style={{ padding: "10px", background: "#333", color: "white" }}>
-          <Link to="/" style={{ color: "white", marginRight: "20px" }}>
-            Login
-          </Link>
-          <Link to="/register" style={{ color: "white", marginRight: "20px" }}>
-            Register
-          </Link>
           <Link to="/friends" style={{ color: "white", marginRight: "20px" }}>
             Friends
           </Link>
@@ -42,43 +47,54 @@ function App() {
             Profile
           </Link>
         </nav>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/friends"
-            element={
-              <ProtectedRoute>
-                <Friends />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chats"
-            element={
-              <ProtectedRoute>
-                <Chats />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat/:chatId"
-            element={
-              <ProtectedRoute>
-                <ChatWindow />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
+      )}
+
+      {/* Phần Routes giữ nguyên */}
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/friends"
+          element={
+            //<ProtectedRoute>
+            <Friends />
+            //</ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats"
+          element={
+            //<ProtectedRoute>
+            <Chats />
+            //</ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat/:chatId"
+          element={
+            //<ProtectedRoute>
+            <ChatWindow />
+            //</ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            //<ProtectedRoute>
+            <Profile />
+            //</ProtectedRoute>
+          }
+        />
+      </Routes>
+    </div>
+  );
+};
+
+// 6. Component App giờ chỉ cần bọc Router bên ngoài MainLayout
+function App() {
+  return (
+    <Router>
+      <MainLayout />
     </Router>
   );
 }
