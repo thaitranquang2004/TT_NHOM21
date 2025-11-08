@@ -56,33 +56,33 @@ const MainLayout = () => {
         <Route
           path="/friends"
           element={
-            //<ProtectedRoute>
-            <Friends />
-            //</ProtectedRoute>
+            <ProtectedRoute>
+              <Friends />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/chats"
           element={
-            //<ProtectedRoute>
-            <Chats />
-            //</ProtectedRoute>
+            <ProtectedRoute>
+              <Chats />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/chat/:chatId"
           element={
-            //<ProtectedRoute>
-            <ChatWindow />
-            //</ProtectedRoute>
+            <ProtectedRoute>
+              <ChatWindow />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/profile"
           element={
-            //<ProtectedRoute>
-            <Profile />
-            //</ProtectedRoute>
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
           }
         />
       </Routes>
