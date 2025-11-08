@@ -5,10 +5,12 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Attach JWT header
+// Attach JWT header cho routes protected
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 

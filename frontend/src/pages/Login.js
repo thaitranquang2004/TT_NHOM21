@@ -1,40 +1,73 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
-const Login = () => (
-  <div className="hero min-h-screen bg-base-200">
-    <div className="hero-content text-center">
-      <div className="max-w-md">
-        <h1 className="text-5xl font-bold">Band M Login</h1>
-        <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-          <div className="card-body">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Username</span>
-              </label>
-              <input
-                type="text"
-                placeholder="username"
-                className="input input-bordered"
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Password</span>
-              </label>
-              <input
-                type="password"
-                placeholder="password"
-                className="input input-bordered"
-              />
-            </div>
-            <div className="form-control mt-6">
-              <button className="btn btn-primary">Login</button>
-            </div>
-          </div>
-        </div>
-      </div>
+const Login = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post("/auth/login", { username, password });
+      localStorage.setItem("token", response.data.accessToken); // JWT
+      localStorage.setItem("user", JSON.stringify(response.data.user)); // User data
+      navigate("/friends"); // Redirect to friends
+    } catch (error) {
+      alert(
+        "Login failed: " + (error.response?.data?.message || error.message)
+      );
+    }
+  };
+
+  return (
+    <div style={{ padding: "50px", maxWidth: "400px", margin: "0 auto" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
+        Band M Login
+      </h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "10px",
+            border: "1px solid #ccc",
+          }}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "10px",
+            border: "1px solid #ccc",
+          }}
+          required
+        />
+        <button
+          type="submit"
+          style={{
+            width: "100%",
+            padding: "10px",
+            background: "#007bff",
+            color: "white",
+            border: "none",
+          }}
+        >
+          Login
+        </button>
+      </form>
     </div>
-  </div>
-);
+  );
+};
 
 export default Login;
