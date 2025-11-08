@@ -29,7 +29,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-// ✅ CORS cho Socket.io: Allow Render frontend + local
+//CORS cho Socket.io: Allow Render frontend + local
 const io = new Server(server, {
   cors: {
     origin: [

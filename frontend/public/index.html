@@ -2,18 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- CSP Fix cho Socket.io & API -->
+    <!-- CSP Fix Nâng Cao Cho Socket.io Polling/WS + API (Band M Render Deploy) -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; 
-                   script-src 'self' 'unsafe-inline' 'unsafe-eval';  <!-- Cho Socket.io client scripts -->
-                   connect-src 'self' https://band-m-backend.onrender.com wss://band-m-backend.onrender.com;  <!-- Cho Axios XHR + Socket polling/websocket -->
-                   img-src 'self' data: https:;  <!-- Cho avatars/media từ Cloudinary -->
-                   style-src 'self' 'unsafe-inline';"
+                   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://band-m-backend.onrender.com https://cdn.socket.io;  <!-- Socket.io scripts + fallback CDN nếu cần -->
+                   connect-src 'self' https://band-m-backend.onrender.com wss://band-m-backend.onrender.com https://band-m-backend.onrender.com/socket.io/;  <!-- Axios + Polling/WS explicit -->
+                   img-src 'self' data: blob: https: https://res.cloudinary.com;  <!-- Cloudinary avatars/media -->
+                   style-src 'self' 'unsafe-inline';  <!-- CRA CSS inline -->
+                   font-src 'self' data:;"
     />
-    <!-- Cho CRA styles -->
-    <title>Band M</title>
+    <title>Band M Chat</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
