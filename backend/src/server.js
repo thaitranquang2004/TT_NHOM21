@@ -28,8 +28,17 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
+
+// ✅ CORS cho Socket.io: Allow Render frontend + local
 const io = new Server(server, {
-  cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] },
+  cors: {
+    origin: [
+      "https://band-m-chat.onrender.com", // Frontend Render domain
+      "http://localhost:3000", // Local dev
+    ],
+    methods: ["GET", "POST"],
+    credentials: true, // Cho JWT auth token qua Socket
+  },
 });
 
 // Connect MongoDB
