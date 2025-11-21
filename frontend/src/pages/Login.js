@@ -58,8 +58,8 @@ const Login = () => {
         console.log("Socket joined user room:", response.data.user.id);
       }
 
-      // Navigate sang /friends (App.js sẽ auto-check & pass ProtectedRoute)
-      navigate("/friends", { replace: true }); // replace tránh back history
+      // Navigate sang / (App.js sẽ auto-check & pass ProtectedRoute)
+      navigate("/", { replace: true }); // replace tránh back history
     } catch (error) {
       // Debug full error
       console.error("Login Error Full:", error);

@@ -1,83 +1,115 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import api from "../utils/api";
-import "./Chats.css"; // <--- Import file CSS mới
+import UserSearchModal from "../components/UserSearchModal";
+import "./Chats.css";
 
-const Chats = () => {
+const Chats = ({ onSelectChat, activeChatId }) => {
   const [chats, setChats] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchChats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get("/chats");
-        setChats(response.data.chats);
+        const [chatsRes, userRes] = await Promise.all([
+            api.get("/chats"),
+            api.get("/users/profile")
+        ]);
+        setChats(chatsRes.data.chats);
+        setCurrentUser(userRes.data.user);
       } catch (error) {
-        alert("Chats load failed");
+        console.error("Data load failed", error);
       }
     };
-    fetchChats();
+    fetchData();
   }, []);
 
-  // LƯU Ý: Chức năng này vẫn đang bị hardcode 'userId1'.
-  // Bạn sẽ cần một modal/UI để chọn người tham gia sau này.
-  const createChat = async () => {
+  const handleUserSelect = async (user) => {
     try {
       const response = await api.post("/chats/create", {
         type: "direct",
-        participants: ["userId1"], // Example
+        participants: [user._id || user.id],
       });
-      setChats((prev) => [...prev, response.data.chat]);
+      // Refetch to get full chat details including populated fields
+      const res = await api.get("/chats");
+      setChats(res.data.chats);
+      
+      setIsModalOpen(false);
+      onSelectChat(response.data.chatId);
     } catch (error) {
-      alert("Create chat failed");
+      console.error("Create chat failed", error);
+      alert("Failed to create chat");
     }
   };
 
-  return (
-    // Dùng class 'page-container' giống như Friends.js
-    <div className="page-container">
-      <h1 className="page-title">Band M Chats</h1>
+  const getChatName = (chat) => {
+      if (chat.name) return chat.name;
+      if (chat.type === 'direct' || chat.participants.length === 2) {
+          const other = chat.participants.find(p => p._id !== currentUser?._id);
+          return other ? (other.fullName || other.username) : "Chat";
+      }
+      return "Group Chat";
+  };
 
-      {/* Tái sử dụng class 'button' và thêm class mới */}
-      <button onClick={createChat} className="button button-create">
-        Create New Chat
-      </button>
+  return (
+    <div className="chats-sidebar">
+      <div className="chats-header">
+        <h2>Chats</h2>
+        <button onClick={() => setIsModalOpen(true)} className="button-icon" title="New Chat">
+          <i className="fas fa-plus"></i> +
+        </button>
+      </div>
 
       <ul className="chat-list">
         {chats.length === 0 && (
-          <p style={{ textAlign: "center", color: "#888" }}>
-            You have no chats.
+          <p className="no-chats-placeholder">
+            No chats yet. Start a new conversation!
           </p>
         )}
 
-        {/* Thay vì <li> chứa <Link>, chúng ta biến <Link> thành <li>
-          để toàn bộ item có thể click được.
-        */}
-        {chats.map((chat) => (
-          <Link
-            to={`/chat/${chat.id}`}
-            key={chat.id}
-            className="chat-item-link" // <--- Class cho Link
-          >
-            <li className="chat-item">
-              {" "}
-              {/* <--- Class cho <li> */}
-              {/* Thêm Avatar placeholder */}
-              <div className="chat-avatar-placeholder">
-                {chat.name ? chat.name[0].toUpperCase() : "B"}
-              </div>
-              {/* Thêm thông tin chat */}
-              <div className="chat-info">
-                <span className="chat-name">{chat.name}</span>
-                {/* Bạn có thể thêm "last message" ở đây nếu API trả về */}
-              </div>
-              {/* Thêm "badge" (huy hiệu) cho tin nhắn chưa đọc */}
-              {chat.unreadCount > 0 && (
+        {chats.map((chat) => {
+          const chatName = getChatName(chat);
+          return (
+            <li 
+                key={chat._id || chat.id} 
+                className={`chat-item ${activeChatId === (chat._id || chat.id) ? 'active' : ''}`}
+                onClick={() => onSelectChat(chat._id || chat.id)}
+            >
+                <div className="chat-avatar-placeholder">
+                {chatName[0]?.toUpperCase() || "C"}
+                </div>
+                <div className="chat-info">
+                <div className="chat-name-row">
+                    <span className="chat-name">{chatName}</span>
+                    {chat.lastMessageTime && (
+                    <span className="chat-time">
+                        {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    )}
+                </div>
+                <div className="chat-preview">
+                    {chat.unreadCount > 0 ? (
+                    <span className="unread-text">{chat.unreadCount} new messages</span>
+                    ) : (
+                    <span className="no-unread">View conversation</span>
+                    )}
+                </div>
+                </div>
+                {chat.unreadCount > 0 && (
                 <div className="chat-unread-badge">{chat.unreadCount}</div>
-              )}
+                )}
             </li>
-          </Link>
-        ))}
+          );
+        })}
       </ul>
+
+      <UserSearchModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSelectUser={handleUserSelect}
+        title="New Chat (Friends)"
+        searchMode="friends"
+      />
     </div>
   );
 };

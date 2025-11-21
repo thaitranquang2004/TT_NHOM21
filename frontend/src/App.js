@@ -11,10 +11,7 @@ import {
 import { jwtDecode } from "jwt-decode"; // npm install jwt-decode nếu chưa (cho expiry check)
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Friends from "./pages/Friends";
-import Chats from "./pages/Chats";
-import ChatWindow from "./pages/ChatWindow";
-import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
 
 // Protected Route (check accessToken & expiry)
 const ProtectedRoute = ({ children }) => {
@@ -23,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     if (!token) {
-      navigate("/", { replace: true }); // Không token → login
+      navigate("/login", { replace: true }); // Không token → login
       return;
     }
     try {
@@ -40,7 +37,7 @@ const ProtectedRoute = ({ children }) => {
     }
   }, [token, navigate]);
 
-  if (!token) return <Navigate to="/" replace />; // Block nếu không token
+  if (!token) return <Navigate to="/login" replace />; // Block nếu không token
   return children; // OK → render
 };
 
@@ -48,9 +45,8 @@ const ProtectedRoute = ({ children }) => {
 const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // State đơn giản cho Navbar/Logout
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Auto-check auth khi app load (fix persist sau refresh)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -58,15 +54,12 @@ const MainLayout = () => {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 > Date.now()) {
           setIsAuthenticated(true);
-          console.log("Auto-auth success in MainLayout"); // Debug
-          // Join Socket room cho online status (theo Band M flow)
           if (window.socket) {
-            // Giả sử socket.js expose window.socket
             window.socket.emit("joinUser", decoded.id || decoded.userId);
           }
-          // Nếu đang ở "/" nhưng đã auth → redirect /friends
-          if (location.pathname === "/") {
-            navigate("/friends", { replace: true });
+          // If at login page but authenticated, go to dashboard
+          if (location.pathname === "/login" || location.pathname === "/register") {
+            navigate("/", { replace: true });
           }
         } else {
           localStorage.clear();
@@ -78,78 +71,18 @@ const MainLayout = () => {
         setIsAuthenticated(false);
       }
     }
-  }, [location.pathname, navigate]); // Re-run nếu path thay đổi
-
-  // Logout handler
-  const handleLogout = () => {
-    localStorage.clear();
-    setIsAuthenticated(false);
-    if (window.socket) {
-      window.socket.emit("leaveUser");
-    }
-    navigate("/", { replace: true }); // Về login
-  };
-
-  // Ẩn Navbar ở login/register
-  const hideNavbarOnPaths = ["/", "/register"];
-  const shouldHideNavbar = hideNavbarOnPaths.includes(location.pathname);
+  }, [location.pathname, navigate]);
 
   return (
     <div className="app">
-      {/* Navbar chỉ hiện nếu authenticated & không phải public path */}
-      {isAuthenticated && !shouldHideNavbar && (
-        <nav style={{ padding: "10px", background: "#333", color: "white" }}>
-          <Link to="/friends" style={{ color: "white", marginRight: "20px" }}>
-            Friends
-          </Link>
-          <Link to="/chats" style={{ color: "white", marginRight: "20px" }}>
-            Chats
-          </Link>
-          <Link to="/profile" style={{ color: "white", marginRight: "20px" }}>
-            Profile
-          </Link>
-          <button
-            onClick={handleLogout}
-            style={{ color: "white", background: "none", border: "none" }}
-          >
-            Logout
-          </button>
-        </nav>
-      )}
-
-      {/* Routes */}
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
-          path="/friends"
+          path="/*"
           element={
             <ProtectedRoute>
-              <Friends />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chats"
-          element={
-            <ProtectedRoute>
-              <Chats />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chat/:chatId"
-          element={
-            <ProtectedRoute>
-              <ChatWindow />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
+              <Dashboard />
             </ProtectedRoute>
           }
         />

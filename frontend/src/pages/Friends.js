@@ -1,67 +1,55 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Thêm useNavigate cho redirect
-import api from "../utils/api"; // Adjust path nếu cần
-import socket from "../utils/socket"; // Import named nếu default null
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import socket from "../utils/socket";
 import "./Friends.css";
 
-const Friends = () => {
+const Friends = ({ onSelectChat }) => {
   const [friends, setFriends] = useState([]);
   const [myFriendIds, setMyFriendIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true); // Loading state mới
-  const [error, setError] = useState(""); // Error state
-  const navigate = useNavigate(); // Cho redirect
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  // --- Auth guard: Check token trước fetch ---
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem("accessToken");
-      console.log(
-        "Auth check - Token exists:",
-        !!token,
-        "Value preview:",
-        token?.substring(0, 20) + "..."
-      ); // Log an toàn (không full token)
       if (!token) {
-        console.warn("No token - Redirecting to login");
-        alert("Please login first!");
         navigate("/");
         return;
       }
-      // Optional: Verify token không expired (dùng jwt-decode nếu cần)
-      // import jwtDecode from 'jwt-decode';
-      // const decoded = jwtDecode(token);
-      // if (decoded.exp * 1000 < Date.now()) { localStorage.removeItem('accessToken'); navigate('/login'); }
     };
     checkAuth();
   }, [navigate]);
 
-  // --- Fetch logic với loading & error ---
   useEffect(() => {
     const fetchFriends = async () => {
       setLoading(true);
       setError("");
       try {
         const response = await api.get("/friends/list");
-        setFriends(response.data.friends || []); // Fallback empty array
+        setFriends(response.data.friends || []);
         const friendIds = new Set(
           response.data.friends?.map((f) => f._id) || []
-        ); // Dùng _id (Mongoose ObjectId)
+        );
         setMyFriendIds(friendIds);
       } catch (error) {
-        console.error("Friends fetch error:", error); // Log chi tiết
-        setError("Failed to load friends. Please try again.");
+        console.error("Friends fetch error:", error);
+        setError("Failed to load friends.");
       } finally {
         setLoading(false);
       }
     };
     fetchFriends();
 
-    // --- Socket safe: Check socket tồn tại ---
     if (socket) {
       const handleFriendRequest = (data) => {
-        setFriends((prev) => [data.sender, ...prev]);
-        setMyFriendIds((prevIds) => new Set([...prevIds, data.sender._id]));
+        // Ideally we should show a notification or pending request list
+        // For now, if we auto-accept or just want to show them in search, we might not need to do much here
+        // unless we have a "Pending Requests" tab.
+        // Let's just log for now as this view is mainly "My Friends" + "Search"
+        console.log("New friend request", data);
       };
       socket.on("friendRequest", handleFriendRequest);
 
@@ -74,17 +62,15 @@ const Friends = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim() === "") {
-      // Reload friends nếu empty
-      window.location.reload(); // Simple, hoặc refetch
+      window.location.reload();
       return;
     }
     setLoading(true);
     try {
       const response = await api.get(
         `/users/search?query=${encodeURIComponent(searchQuery)}`
-      ); // Encode query
+      );
       setFriends(response.data.users || []);
-      // myFriendIds giữ nguyên để check "Add" vs "Chat"
     } catch (error) {
       console.error("Search error:", error);
       setError("Search failed.");
@@ -96,95 +82,91 @@ const Friends = () => {
   const sendRequest = async (userId) => {
     try {
       await api.post("/friends/request", { receiverId: userId });
-      alert("Request sent!"); // Sau này dùng toast
-      // Update UI: Remove from list hoặc disable button (optional)
+      alert("Friend request sent!");
     } catch (error) {
       console.error("Request error:", error);
-      alert(
-        "Request failed: " + (error.response?.data?.message || "Unknown error")
-      );
+      alert("Request failed: " + (error.response?.data?.message || "Unknown error"));
     }
   };
 
-  if (loading) {
+  if (loading && friends.length === 0) {
     return (
-      <div className="page-container">
-        <h1 className="page-title">Band M Friends</h1>
-        <p style={{ textAlign: "center", color: "#888" }}>
-          Loading friends...
-        </p>{" "}
-        {/* Fallback inline nếu CSS chưa */}
+      <div className="page-container loading-container">
+        <div className="spinner"></div>
+        <p>Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <h1 className="page-title">Band M Friends</h1>
+    <div className="page-container friends-page">
+      <div className="friends-header">
+        <h1 className="page-title">Friends</h1>
+        <form onSubmit={handleSearch} className="search-form">
+          <input
+            type="text"
+            placeholder="Find friends..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+            disabled={loading}
+          />
+          <button type="submit" className="search-button" disabled={loading}>
+            <i className="fas fa-search"></i>
+          </button>
+        </form>
+      </div>
 
-      {error && <p className="error-message">{error}</p>}
+      {error && <div className="error-banner">{error}</div>}
 
-      <form onSubmit={handleSearch} className="search-form">
-        <input
-          type="text"
-          placeholder="Search user by name or username"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-          disabled={loading}
-        />
-        <button type="submit" className="search-button" disabled={loading}>
-          {loading ? "Searching..." : "Search"}
-        </button>
-      </form>
-
-      <ul className="friend-list">
+      <div className="friends-grid">
         {friends.length === 0 ? (
-          <li className="empty-state">
-            <p>No friends or users found. Start by searching or adding some!</p>
-          </li>
+          <div className="empty-state">
+            <div className="empty-icon">👋</div>
+            <h3>No friends found</h3>
+            <p>Try searching for people to add!</p>
+          </div>
         ) : (
           friends.map((friend) => (
-            <li key={friend._id || friend.id} className="friend-item">
-              {" "}
-              {/* _id cho Mongoose */}
-              <div className="friend-info">
-                <img
-                  src={friend.avatar || "/default-avatar.png"}
-                  alt="Avatar"
-                  className="friend-avatar"
-                />{" "}
-                {/* Thêm avatar nếu có */}
-                <div>
-                  <span className="friend-name">{friend.fullName}</span>
-                  <span className="friend-username">@{friend.username}</span>
-                  {friend.onlineStatus && (
-                    <span className="online-status">● Online</span>
+            <div key={friend._id || friend.id} className="friend-card">
+              <div className="friend-card-header">
+                <div className="friend-avatar-large">
+                  {friend.avatar ? (
+                    <img src={friend.avatar} alt={friend.fullName} />
+                  ) : (
+                    <span>{friend.username?.[0]?.toUpperCase()}</span>
                   )}
                 </div>
+                {friend.onlineStatus && <span className="online-badge"></span>}
               </div>
-              <div className="friend-actions">
+              
+              <div className="friend-card-body">
+                <h3 className="friend-name">{friend.fullName}</h3>
+                <p className="friend-username">@{friend.username}</p>
+              </div>
+
+              <div className="friend-card-actions">
                 {myFriendIds.has(friend._id || friend.id) ? (
-                  <Link
-                    to={`/chat/${friend._id || friend.id}`}
-                    className="button button-chat"
+                  <button
+                    onClick={() => onSelectChat(friend._id || friend.id)}
+                    className="button button-primary button-full"
                   >
-                    Chat
-                  </Link>
+                    Message
+                  </button>
                 ) : (
                   <button
                     onClick={() => sendRequest(friend._id || friend.id)}
-                    className="button button-add"
+                    className="button button-secondary button-full"
                     disabled={loading}
                   >
                     Add Friend
                   </button>
                 )}
               </div>
-            </li>
+            </div>
           ))
         )}
-      </ul>
+      </div>
     </div>
   );
 };
