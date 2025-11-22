@@ -9,6 +9,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,6 +42,7 @@ const Profile = () => {
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setImageError(false); // Reset error when new file selected
     }
   };
 
@@ -66,10 +68,13 @@ const Profile = () => {
       });
 
       alert("Profile updated successfully!");
-      setUser(response.data.user);
       setSelectedFile(null);
-      // Keep previewUrl or update it to the new avatar url from server if you want
       setPreviewUrl(null); 
+      setImageError(false); // Reset error state
+      
+      // Force re-fetch to ensure we get the latest avatar
+      const profileResponse = await api.get("/users/profile");
+      setUser(profileResponse.data.user);
 
     } catch (error) {
       alert(
@@ -118,12 +123,19 @@ const Profile = () => {
             <div className="profile-avatar-placeholder" onClick={() => document.getElementById('avatar-input').click()} style={{cursor: 'pointer', overflow: 'hidden'}}>
             {previewUrl ? (
                 <img src={previewUrl} alt="Preview" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-            ) : user.avatar ? (
+            ) : (user.avatar && !imageError) ? (
                 <img 
-                    key={user.avatar}
+                    key={user.avatar} 
                     src={user.avatar} 
                     alt={user.fullName} 
-                    style={{width: '100%', height: '100%', objectFit: 'cover'}} 
+                    style={{width: '100%', height: '100%', objectFit: 'cover'}}
+                    onError={(e) => {
+                      console.error("Avatar failed to load:", user.avatar);
+                      setImageError(true); // Set error state to show fallback
+                    }}
+                    onLoad={() => {
+                      console.log("Avatar loaded successfully:", user.avatar);
+                    }}
                 />
             ) : (
                  <div style={{width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', color: '#fff'}}>

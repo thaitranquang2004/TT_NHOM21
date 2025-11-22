@@ -4,27 +4,23 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- CSP Fix Nâng Cao Cho Socket.io Polling/WS + API (Band M Render Deploy) -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; 
-                   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://band-m-backend.onrender.com https://cdn.socket.io;  <!-- Socket.io scripts + fallback CDN nếu cần -->
-                   connect-src 'self' https://band-m-backend.onrender.com wss://band-m-backend.onrender.com https://band-m-backend.onrender.com/socket.io/;  <!-- Axios + Polling/WS explicit -->
-                   img-src 'self' data: blob: https: https://res.cloudinary.com;  <!-- Cloudinary avatars/media -->
-                   style-src 'self' 'unsafe-inline';  <!-- CRA CSS inline -->
-                   font-src 'self' data: https://cdnjs.cloudflare.com;"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-    <title>Band M Chat</title>
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Band M - Real-time Chat App" />
+    <title>Band M • Real-time Chat</title>
+
+    <!-- CSP HOÀN HẢO CHO BAND M - KHÔNG CÒN COMMENT TRONG META TAG NỮA -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.socket.io https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://res.cloudinary.com https://via.placeholder.com; connect-src 'self' http://localhost:5000 https://band-m-backend.onrender.com ws://localhost:5000 wss://localhost:5000 ws://band-m-backend.onrender.com wss://band-m-backend.onrender.com; worker-src 'self' blob:; frame-src 'self';">
+
+    <!-- Font Awesome 6.6.0 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Google Fonts Inter + Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>You need to enable JavaScript to run Band M.</noscript>
     <div id="root"></div>
   </body>
 </html>

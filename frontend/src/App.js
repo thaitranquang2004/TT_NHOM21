@@ -48,6 +48,7 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Effect 1: Check Auth & Redirect (Runs on location change)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -55,11 +56,7 @@ const MainLayout = () => {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 > Date.now()) {
           setIsAuthenticated(true);
-          initSocket(token); // Initialize socket
-          if (window.socket) {
-            window.socket.emit("joinUser", decoded.id || decoded.userId);
-          }
-          // If at login page but authenticated, go to dashboard
+          // Redirect if on login/register pages
           if (location.pathname === "/login" || location.pathname === "/register") {
             navigate("/", { replace: true });
           }
@@ -72,8 +69,26 @@ const MainLayout = () => {
         localStorage.clear();
         setIsAuthenticated(false);
       }
+    } else {
+      setIsAuthenticated(false);
     }
   }, [location.pathname, navigate]);
+
+  // Effect 2: Init Socket (Runs ONLY when token changes or component mounts)
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.exp * 1000 > Date.now()) {
+          // Only init if not already connected or if token changed
+          initSocket(token); 
+        }
+      } catch (e) {
+        console.error("Socket init failed:", e);
+      }
+    }
+  }, []); // Empty dependency or [isAuthenticated] to run once on load/login
 
   return (
     <div className="app">

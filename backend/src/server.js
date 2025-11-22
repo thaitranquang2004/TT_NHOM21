@@ -7,7 +7,6 @@ import rateLimit from "express-rate-limit";
 import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import cloudinary from "cloudinary";
 import { v2 as cloudinaryV2 } from "cloudinary";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -16,8 +15,8 @@ import cookieParser from "cookie-parser";
 
 dotenv.config();
 
-// Config Cloudinary (từ .env)
-cloudinary.config({
+// Cloudinary config
+cloudinaryV2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
@@ -29,17 +28,32 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-//CORS cho Socket.io: Allow Render frontend + local
+// ==================== FIX CORS & SOCKET.IO TRIỆT ĐỂ CHO LOCAL + RENDER ====================
+const allowedOrigins = [
+  "http://localhost:3000",                    // Local dev
+  "http://localhost:5000",                    // Local prod (served by backend)
+  "https://band-m-chat.onrender.com",         // Frontend Render
+];
+
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+};
+
+// Áp dụng CORS cho Express
+app.use(cors(corsOptions));
+
+// Socket.io config HOÀN HẢO (fix transport close forever)
 const io = new Server(server, {
-  cors: {
-    origin: [
-      "https://band-m-chat.onrender.com", // Frontend Render domain
-      "http://localhost:3000", // Local dev
-    ],
-    methods: ["GET", "POST"],
-    credentials: true, // Cho JWT auth token qua Socket
-  },
+  path: "/socket.io/",                        // BẮT BUỘC PHẢI CÓ!
+  cors: corsOptions,                          // Đồng bộ với Express CORS
+  transports: ["websocket"],                  // Chỉ dùng websocket (Render yêu cầu)
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
+
+console.log("Socket.io khởi tạo thành công với path: /socket.io/");
 
 // Connect MongoDB
 mongoose
@@ -47,31 +61,30 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => {
     console.error("MongoDB error:", err);
-    process.exit(1); // Exit nếu DB fail
+    process.exit(1);
   });
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Tắt helmet CSP vì frontend tự handle
+}));
 app.use(morgan("combined"));
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Rate limit
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"),
-  max: parseInt(process.env.RATE_LIMIT_MAX || "1000"),
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
 });
-// app.use("/api", limiter); // Remove global limit
 
-// Pass io to req for Socket emits in routes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// Routes (relative paths từ src/)
+// Routes
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import friendRoutes from "./routes/friends.js";
@@ -86,66 +99,43 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/messages", limiter, messageRoutes);
 app.use("/api/reactions", reactionRoutes);
 
-// Socket.io Setup
+// Socket setup
 import("./sockets/index.js").then(({ default: setupSockets }) => {
   setupSockets(io);
 });
 
-// Error Handler (import relative)
+// Error Handler
 import { errorHandler } from "./middleware/errorHandler.js";
 app.use(errorHandler);
 
-// ========== PRODUCTION: Serve Frontend Static Files ==========
+// Production serve frontend
 if (process.env.NODE_ENV === "production") {
   const frontendDistPath = path.join(__dirname, "../../frontend/build");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
-  console.log("Serving static from:", frontendDistPath);
-
-  if (!fs.existsSync(frontendDistPath)) {
-    console.error(
-      "ERROR: frontend/dist not found! Run 'npm run build' in frontend."
-    );
-    // Optional: Tạo placeholder để tránh crash
-    app.get("*", (req, res) =>
-      res.status(500).json({
-        message: "Frontend not built. Run 'cd frontend && npm run build'",
-      })
-    );
-  } else {
-    console.log("Frontend dist found OK!");
-
-    // Serve static assets TRƯỚC fallback
-    app.use(
-      express.static(frontendDistPath, {
-        index: false, // Không auto index.html cho subdirs
-      })
-    );
-    console.log("Static middleware registered");
-
-    // Fallback: Handle SPA routes (root + /chat/:id, etc.) - CHỈ non-API
+  
+  if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath));
+    
     app.get("*", (req, res) => {
-      if (req.path.startsWith("/api")) {
-        return res.status(404).json({ message: "API not found" }); // Catch API 404 ở đây
+      if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+        return res.status(404).json({ message: "Not found" });
       }
-      const indexPath = path.join(frontendDistPath, "index.html");
-      console.log("Serving index.html for path:", req.path);
-      if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
-      } else {
-        console.error("index.html not found at:", indexPath);
-        return res.status(404).json({ message: "Frontend not built" });
-      }
+      res.sendFile(path.join(frontendDistPath, "index.html"));
     });
+  } else {
+    console.error("Frontend build not found! Run: cd frontend && npm run build");
   }
-} else {
-  console.log("Running in DEV mode - No frontend serve");
 }
 
-// ========== 404 Handler CUỐI CÙNG: Chỉ cho unmatched API/static ==========
+// 404 cuối cùng
 app.use((req, res) => {
-  console.log("Final 404 hit for:", req.path); // Debug
-  res.status(404).json({ message: "Not found" });
+  res.status(404).json({ message: "API Route Not Found" });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Band M Backend chạy mượt trên port ${PORT}`);
+  console.log(`   Local: http://localhost:${PORT}`);
+  if (process.env.RENDER_EXTERNAL_URL) {
+    console.log(`   Render: ${process.env.RENDER_EXTERNAL_URL}`);
+  }
+});
