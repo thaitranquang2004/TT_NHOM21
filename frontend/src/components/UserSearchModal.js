@@ -20,7 +20,7 @@ const UserSearchModal = ({ isOpen, onClose, onSelectUser, title = "Search Users"
       if (searchMode === "friends") {
         // Fetch all friends and filter client-side or use a search endpoint for friends if available
         // The friendController has listFriends. Let's assume it returns all friends.
-        const response = await api.get("/friends");
+        const response = await api.get("/friends/list");
         // response.data.friends is the list.
         // Filter by query
         const allFriends = response.data.friends;

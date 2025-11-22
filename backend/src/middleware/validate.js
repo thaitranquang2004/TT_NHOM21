@@ -57,10 +57,10 @@ export const validateProfileUpdate = [
     .trim()
     .escape(),
   body("phone")
-    .optional()
+    .optional({ checkFalsy: true })
     .isMobilePhone("vi-VN")
     .withMessage("Số điện thoại không hợp lệ"),
-  body("dob").optional().isISO8601().withMessage("Ngày sinh phải YYYY-MM-DD"),
+  body("dob").optional({ checkFalsy: true }).isISO8601().withMessage("Ngày sinh phải YYYY-MM-DD"),
   handleValidationErrors,
 ];
 

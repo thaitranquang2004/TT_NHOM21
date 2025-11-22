@@ -1,123 +1,253 @@
-/* Container chung cho các trang */
+/* Container chung */
 .page-container {
-  max-width: 800px;
-  margin: 20px auto; /* Căn giữa và tạo khoảng cách */
+  max-width: 1000px;
+  margin: 20px auto;
   padding: 20px;
   background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .page-title {
   text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
-/* Form tìm kiếm */
+/* Search Form */
+.friends-header {
+  margin-bottom: 30px;
+}
+
 .search-form {
-  display: flex; /* Đặt input và button trên cùng 1 hàng */
-  margin-bottom: 20px;
-  gap: 10px; /* Khoảng cách giữa input và button */
+  display: flex;
+  gap: 10px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .search-input {
-  flex-grow: 1; /* Input chiếm phần lớn không gian */
-  padding: 12px 15px;
+  flex-grow: 1;
+  padding: 12px 20px;
   font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: 2px solid #eef0f5;
+  border-radius: 12px;
+  transition: all 0.2s;
+  background-color: #f8f9fa;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  border-color: #0084ff;
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.1);
 }
 
 .search-button {
-  padding: 12px 20px;
-  background-color: #007bff;
+  padding: 12px 24px;
+  background-color: #0084ff;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 12px;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .search-button:hover {
-  background-color: #0056b3;
+  background-color: #0073e6;
 }
 
-/* Danh sách bạn bè */
-.friend-list {
-  list-style-type: none; /* Bỏ dấu chấm của <li> */
-  padding: 0;
-  margin: 0;
+/* Sections */
+.section-title {
+  font-size: 1.2rem;
+  color: #65676b;
+  margin-bottom: 16px;
+  font-weight: 600;
+  padding-left: 5px;
 }
 
-/* Từng "item" trong danh sách */
-.friend-item {
+.section-divider {
+  border: 0;
+  height: 1px;
+  background-color: #e4e6eb;
+  margin: 30px 0;
+}
+
+/* Grid Layout */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+/* Friend Card */
+.friend-card {
+  background: #fff;
+  border: 1px solid #eef0f5;
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
-  justify-content: space-between; /* Đẩy tên và nút ra 2 phía */
-  align-items: center; /* Căn giữa theo chiều dọc */
-  padding: 15px;
-  border-bottom: 1px solid #f0f0f0; /* Viền mờ ngăn cách */
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.friend-item:last-child {
-  border-bottom: none; /* Bỏ viền cho item cuối */
+.friend-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.friend-info {
+.friend-card-header {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.friend-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #e4e6eb;
   display: flex;
-  flex-direction: column; /* Tên ở trên, username ở dưới */
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #65676b;
+  overflow: hidden;
+}
+
+.friend-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.online-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #31a24c;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.friend-card-body {
+  margin-bottom: 16px;
+  width: 100%;
 }
 
 .friend-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1d2129;
+  color: #050505;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .friend-username {
   font-size: 0.9rem;
-  color: #666;
+  color: #65676b;
+  margin: 0;
 }
 
-/* Nút hành động */
-.friend-actions {
-  min-width: 100px; /* Đảm bảo các nút có độ rộng tối thiểu */
-  text-align: right;
+/* Actions */
+.friend-card-actions {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
 }
 
-/* Style chung cho các nút (cả Link và Button) */
 .button {
-  padding: 8px 16px;
+  padding: 8px 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-weight: 600;
   font-size: 0.9rem;
-  font-weight: 500;
-  color: white;
   cursor: pointer;
-  text-decoration: none; /* Cho <Link> */
-  display: inline-block;
-  transition: opacity 0.2s;
+  transition: background-color 0.2s;
 }
 
-.button:hover {
-  opacity: 0.85;
+.button-primary {
+  background-color: #e7f3ff;
+  color: #1877f2;
 }
 
-/* Nút Chat (xanh dương) */
-.button-chat {
-  background-color: #007bff;
+.button-primary:hover {
+  background-color: #dbe7f2;
 }
 
-/* Nút Add (xanh lá) */
-.button-add {
-  background-color: #28a745;
+.button-secondary {
+  background-color: #e4e6eb;
+  color: #050505;
+}
+
+.button-secondary:hover {
+  background-color: #d8dadf;
+}
+
+.button-full {
+  width: 100%;
+}
+
+.button-half {
+  flex: 1;
+}
+
+/* Empty State */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #65676b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+/* Loading & Error */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0084ff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error-banner {
+  background-color: #ffebe8;
+  color: #cc0000;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
 }

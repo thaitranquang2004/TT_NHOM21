@@ -61,9 +61,9 @@ app.use(cookieParser());
 // Rate limit
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"),
-  max: parseInt(process.env.RATE_LIMIT_MAX || "100"),
+  max: parseInt(process.env.RATE_LIMIT_MAX || "1000"),
 });
-app.use("/api", limiter);
+// app.use("/api", limiter); // Remove global limit
 
 // Pass io to req for Socket emits in routes
 app.use((req, res, next) => {
@@ -79,11 +79,11 @@ import chatRoutes from "./routes/chats.js";
 import messageRoutes from "./routes/messages.js";
 import reactionRoutes from "./routes/reactions.js";
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", limiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/chats", chatRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/messages", limiter, messageRoutes);
 app.use("/api/reactions", reactionRoutes);
 
 // Socket.io Setup

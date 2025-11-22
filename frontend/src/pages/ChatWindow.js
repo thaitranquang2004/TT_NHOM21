@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../utils/api";
-import socket from "../utils/socket";
+import { socket } from "../utils/socket";
+import { Send } from "lucide-react";
 import "./ChatWindow.css";
 
 const ChatWindow = ({ chatId }) => {
@@ -198,7 +199,7 @@ const ChatWindow = ({ chatId }) => {
             placeholder="Type a message..."
             />
             <button type="submit" className="send-button" disabled={!content.trim()}>
-            <i className="fas fa-paper-plane"></i>
+              <Send size={18} />
             </button>
         </form>
       </div>

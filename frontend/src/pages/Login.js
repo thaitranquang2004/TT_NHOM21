@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
+import { socket, initSocket } from "../utils/socket";
 import "./Login.css";
 
 const Login = () => {
@@ -52,9 +53,10 @@ const Login = () => {
       });
 
       // Socket join cho online status (theo Band M flowchart: Set Session → Join Room)
-      if (window.socket) {
-        // Giả sử socket.js expose window.socket
-        window.socket.emit("joinUser", response.data.user.id); // Emit user ID để backend set onlineStatus
+      // Socket join cho online status
+      const newSocket = initSocket(response.data.accessToken);
+      if (newSocket) {
+        newSocket.emit("joinUser", response.data.user.id);
         console.log("Socket joined user room:", response.data.user.id);
       }
 

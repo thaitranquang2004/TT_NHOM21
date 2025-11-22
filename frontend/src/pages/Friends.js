@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
-import socket from "../utils/socket";
+import { socket } from "../utils/socket";
 import "./Friends.css";
 
 const Friends = ({ onSelectChat }) => {
   const [friends, setFriends] = useState([]);
+  const [incomingRequests, setIncomingRequests] = useState([]);
   const [myFriendIds, setMyFriendIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -23,38 +24,53 @@ const Friends = ({ onSelectChat }) => {
     checkAuth();
   }, [navigate]);
 
+  const fetchFriends = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [friendsRes, requestsRes] = await Promise.all([
+        api.get("/friends/list"),
+        api.get("/friends/requests/incoming"),
+      ]);
+
+      setFriends(friendsRes.data.friends || []);
+      setIncomingRequests(requestsRes.data.requests || []);
+
+      const friendIds = new Set(
+        friendsRes.data.friends?.map((f) => f._id) || []
+      );
+      setMyFriendIds(friendIds);
+    } catch (error) {
+      console.error("Friends fetch error:", error);
+      setError("Failed to load friends.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchFriends = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await api.get("/friends/list");
-        setFriends(response.data.friends || []);
-        const friendIds = new Set(
-          response.data.friends?.map((f) => f._id) || []
-        );
-        setMyFriendIds(friendIds);
-      } catch (error) {
-        console.error("Friends fetch error:", error);
-        setError("Failed to load friends.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchFriends();
 
     if (socket) {
       const handleFriendRequest = (data) => {
-        // Ideally we should show a notification or pending request list
-        // For now, if we auto-accept or just want to show them in search, we might not need to do much here
-        // unless we have a "Pending Requests" tab.
-        // Let's just log for now as this view is mainly "My Friends" + "Search"
         console.log("New friend request", data);
+        // Refresh lists when a new request comes in
+        fetchFriends();
       };
+      
+      const handleFriendAccepted = (data) => {
+         console.log("Friend request accepted", data);
+         fetchFriends();
+      }
+
       socket.on("friendRequest", handleFriendRequest);
+      socket.on("friendAccepted", handleFriendAccepted);
 
       return () => {
-        if (socket) socket.off("friendRequest", handleFriendRequest);
+        if (socket) {
+            socket.off("friendRequest", handleFriendRequest);
+            socket.off("friendAccepted", handleFriendAccepted);
+        }
       };
     }
   }, []);
@@ -62,7 +78,7 @@ const Friends = ({ onSelectChat }) => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim() === "") {
-      window.location.reload();
+      fetchFriends(); // Reset to initial state
       return;
     }
     setLoading(true);
@@ -70,6 +86,7 @@ const Friends = ({ onSelectChat }) => {
       const response = await api.get(
         `/users/search?query=${encodeURIComponent(searchQuery)}`
       );
+      // When searching, we show search results but keep myFriendIds to show correct buttons
       setFriends(response.data.users || []);
     } catch (error) {
       console.error("Search error:", error);
@@ -83,13 +100,50 @@ const Friends = ({ onSelectChat }) => {
     try {
       await api.post("/friends/request", { receiverId: userId });
       alert("Friend request sent!");
+      // Optionally update UI to show "Request Sent" state if we tracked it
     } catch (error) {
       console.error("Request error:", error);
-      alert("Request failed: " + (error.response?.data?.message || "Unknown error"));
+      alert(
+        "Request failed: " + (error.response?.data?.message || "Unknown error")
+      );
     }
   };
 
-  if (loading && friends.length === 0) {
+  const acceptRequest = async (requestId) => {
+    try {
+      await api.put(`/friends/request/${requestId}/accept`);
+      fetchFriends(); // Refresh lists
+    } catch (error) {
+      console.error("Accept error:", error);
+      alert("Failed to accept request");
+    }
+  };
+
+  const declineRequest = async (requestId) => {
+    try {
+      await api.put(`/friends/request/${requestId}/decline`);
+      fetchFriends(); // Refresh lists
+    } catch (error) {
+      console.error("Decline error:", error);
+      alert("Failed to decline request");
+    }
+  };
+
+  const handleMessage = async (friendId) => {
+    try {
+      // Create or get existing chat
+      const response = await api.post("/chats/create", {
+        type: "direct",
+        participants: [friendId],
+      });
+      onSelectChat(response.data.chatId);
+    } catch (error) {
+      console.error("Failed to start chat:", error);
+      alert("Failed to start chat");
+    }
+  };
+
+  if (loading && friends.length === 0 && incomingRequests.length === 0) {
     return (
       <div className="page-container loading-container">
         <div className="spinner"></div>
@@ -119,53 +173,100 @@ const Friends = ({ onSelectChat }) => {
 
       {error && <div className="error-banner">{error}</div>}
 
-      <div className="friends-grid">
-        {friends.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">👋</div>
-            <h3>No friends found</h3>
-            <p>Try searching for people to add!</p>
+      {/* Incoming Requests Section */}
+      {incomingRequests.length > 0 && !searchQuery && (
+        <div className="requests-section">
+          <h2 className="section-title">Friend Requests ({incomingRequests.length})</h2>
+          <div className="friends-grid">
+            {incomingRequests.map((req) => (
+              <div key={req._id} className="friend-card request-card">
+                <div className="friend-card-header">
+                  <div className="friend-avatar-large">
+                    {req.sender?.avatar ? (
+                      <img src={req.sender.avatar} alt={req.sender.fullName} />
+                    ) : (
+                      <span>{req.sender?.username?.[0]?.toUpperCase()}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="friend-card-body">
+                  <h3 className="friend-name">{req.sender?.fullName}</h3>
+                  <p className="friend-username">@{req.sender?.username}</p>
+                </div>
+                <div className="friend-card-actions">
+                  <button
+                    onClick={() => acceptRequest(req._id)}
+                    className="button button-primary button-half"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => declineRequest(req._id)}
+                    className="button button-secondary button-half"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
-          friends.map((friend) => (
-            <div key={friend._id || friend.id} className="friend-card">
-              <div className="friend-card-header">
-                <div className="friend-avatar-large">
-                  {friend.avatar ? (
-                    <img src={friend.avatar} alt={friend.fullName} />
+          <hr className="section-divider" />
+        </div>
+      )}
+
+      {/* Friends List / Search Results */}
+      <div className="friends-list-section">
+         <h2 className="section-title">
+            {searchQuery ? "Search Results" : `My Friends (${friends.length})`}
+         </h2>
+        <div className="friends-grid">
+          {friends.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">👋</div>
+              <h3>{searchQuery ? "No users found" : "No friends yet"}</h3>
+              <p>{searchQuery ? "Try a different search term" : "Search for people to add!"}</p>
+            </div>
+          ) : (
+            friends.map((friend) => (
+              <div key={friend._id || friend.id} className="friend-card">
+                <div className="friend-card-header">
+                  <div className="friend-avatar-large">
+                    {friend.avatar ? (
+                      <img src={friend.avatar} alt={friend.fullName} />
+                    ) : (
+                      <span>{friend.username?.[0]?.toUpperCase()}</span>
+                    )}
+                  </div>
+                  {friend.onlineStatus && <span className="online-badge"></span>}
+                </div>
+
+                <div className="friend-card-body">
+                  <h3 className="friend-name">{friend.fullName}</h3>
+                  <p className="friend-username">@{friend.username}</p>
+                </div>
+
+                <div className="friend-card-actions">
+                  {myFriendIds.has(friend._id || friend.id) ? (
+                    <button
+                      onClick={() => handleMessage(friend._id || friend.id)}
+                      className="button button-primary button-full"
+                    >
+                      Message
+                    </button>
                   ) : (
-                    <span>{friend.username?.[0]?.toUpperCase()}</span>
+                    <button
+                      onClick={() => sendRequest(friend._id || friend.id)}
+                      className="button button-secondary button-full"
+                      disabled={loading}
+                    >
+                      Add Friend
+                    </button>
                   )}
                 </div>
-                {friend.onlineStatus && <span className="online-badge"></span>}
               </div>
-              
-              <div className="friend-card-body">
-                <h3 className="friend-name">{friend.fullName}</h3>
-                <p className="friend-username">@{friend.username}</p>
-              </div>
-
-              <div className="friend-card-actions">
-                {myFriendIds.has(friend._id || friend.id) ? (
-                  <button
-                    onClick={() => onSelectChat(friend._id || friend.id)}
-                    className="button button-primary button-full"
-                  >
-                    Message
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => sendRequest(friend._id || friend.id)}
-                    className="button button-secondary button-full"
-                    disabled={loading}
-                  >
-                    Add Friend
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

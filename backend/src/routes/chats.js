@@ -4,6 +4,7 @@ import {
   createChat,
   inviteToGroup,
   listChats,
+  getChatDetails,
 } from "../controllers/chatController.js";
 
 const router = express.Router();
@@ -16,5 +17,8 @@ router.post("/:chatId/invite", authJWT, inviteToGroup);
 
 // List chats (preview)
 router.get("/", authJWT, listChats);
+
+// Get chat details
+router.get("/:chatId", authJWT, getChatDetails);
 
 export default router;

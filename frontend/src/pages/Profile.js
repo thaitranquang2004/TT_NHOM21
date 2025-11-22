@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Thêm import này (nếu chưa có React Router)
-import api from "../utils/api"; // Giả sử api instance đã config interceptors cho token
-import io from "socket.io-client"; // Nếu dùng Socket, import để disconnect (optional)
-
-import "./Login.css"; // Tái sử dụng CSS của Login cho consistent UI
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import { disconnectSocket } from "../utils/socket";
+import "./Login.css";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false); // Thêm state cho loading (UX tốt hơn)
-  const navigate = useNavigate(); // Hook để redirect
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -21,7 +22,6 @@ const Profile = () => {
           "Profile load failed: " +
             (error.response?.data?.message || error.message)
         );
-        // Optional: Nếu error 401, auto logout và redirect login
         if (error.response?.status === 401) {
           handleLogout();
         }
@@ -32,28 +32,45 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // Xử lý thay đổi chung cho các input
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      // Gửi tất cả dữ liệu có thể cập nhật (loại bỏ username vì không cho sửa)
-      const updateData = {
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
-        dob: user.dob,
-      };
+      
+      const formData = new FormData();
+      formData.append("fullName", user.fullName);
+      formData.append("email", user.email);
+      formData.append("phone", user.phone || "");
+      formData.append("dob", user.dob || "");
+      
+      if (selectedFile) {
+        formData.append("avatar", selectedFile);
+      }
 
-      await api.put("/users/profile", updateData);
+      const response = await api.put("/users/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       alert("Profile updated successfully!");
-      // Optional: Refetch profile sau update để sync data
-      const response = await api.get("/users/profile");
       setUser(response.data.user);
+      setSelectedFile(null);
+      // Keep previewUrl or update it to the new avatar url from server if you want
+      setPreviewUrl(null); 
+
     } catch (error) {
       alert(
         "Update failed: " + (error.response?.data?.message || error.message)
@@ -63,29 +80,18 @@ const Profile = () => {
     }
   };
 
-  // Thêm hàm handleLogout mới
   const handleLogout = async () => {
     try {
       setLoading(true);
-      // Gọi API logout (backend sẽ invalidate nếu cần)
       await api.post("/auth/logout");
-
-      // Clear tokens ở frontend
-      localStorage.removeItem("accessToken"); // Hoặc sessionStorage nếu dùng
+      localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-
-      // Clear user session data
-      localStorage.removeItem("session"); // Nếu bạn lưu session object
-
-      // Disconnect Socket.io nếu đang connect (giả sử có global socket)
-      // const socket = io(); // Hoặc từ context: socket.disconnect();
-      // socket.disconnect();
-
-      // Redirect về trang login
-      navigate("/"); // Thay bằng route login của bạn, ví dụ "/"
+      localStorage.removeItem("session");
+      disconnectSocket(); // Disconnect socket
+      navigate("/");
     } catch (error) {
-      // Nếu API fail, vẫn clear frontend và redirect (an toàn hơn)
-      localStorage.clear(); // Clear all để chắc chắn
+      localStorage.clear();
+      disconnectSocket(); // Ensure disconnect even on error
       navigate("/login");
       alert("Logged out, but server error occurred: " + error.message);
     } finally {
@@ -93,17 +99,7 @@ const Profile = () => {
     }
   };
 
-  // Hiển thị loading
-  if (loading) {
-    return (
-      <div className="login-container">
-        <div className="loading-spinner">Processing...</div>
-      </div>
-    );
-  }
-
-  // Nếu chưa load user
-  if (!user) {
+  if (loading && !user) {
     return (
       <div className="login-container">
         <div className="loading-spinner">Loading profile...</div>
@@ -111,17 +107,40 @@ const Profile = () => {
     );
   }
 
+  if (!user) return null;
+
   return (
     <div className="login-container">
       <form onSubmit={handleUpdate} className="login-form">
         <h1 className="login-title">Band M Profile</h1>
 
-        {/* Avatar placeholder (có thể nâng cấp với Cloudinary URL sau) */}
-        <div className="profile-avatar-placeholder">
-          {user.username ? user.username[0].toUpperCase() : "U"}
+        <div className="profile-avatar-section">
+            <div className="profile-avatar-placeholder" onClick={() => document.getElementById('avatar-input').click()} style={{cursor: 'pointer', overflow: 'hidden'}}>
+            {previewUrl ? (
+                <img src={previewUrl} alt="Preview" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+            ) : user.avatar ? (
+                <img 
+                    key={user.avatar}
+                    src={user.avatar} 
+                    alt={user.fullName} 
+                    style={{width: '100%', height: '100%', objectFit: 'cover'}} 
+                />
+            ) : (
+                 <div style={{width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', color: '#fff'}}>
+                    {user.username ? user.username[0].toUpperCase() : "U"}
+                </div>
+            )}
+            </div>
+            <input 
+                type="file" 
+                id="avatar-input" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+                style={{display: 'none'}}
+            />
+            <p style={{textAlign: 'center', fontSize: '0.8rem', color: '#888', marginTop: '5px'}}>Click avatar to change</p>
         </div>
 
-        {/* Username (Không cho sửa) */}
         <div className="input-group">
           <label htmlFor="username">Username</label>
           <input
@@ -134,7 +153,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Full Name */}
         <div className="input-group">
           <label htmlFor="fullName">Full Name</label>
           <input
@@ -147,7 +165,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Email */}
         <div className="input-group">
           <label htmlFor="email">Email</label>
           <input
@@ -160,7 +177,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Phone */}
         <div className="input-group">
           <label htmlFor="phone">Phone</label>
           <input
@@ -173,7 +189,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* DOB */}
         <div className="input-group">
           <label htmlFor="dob">Date of Birth</label>
           <input
@@ -188,7 +203,6 @@ const Profile = () => {
           />
         </div>
 
-        {/* Nút Update Profile */}
         <button
           type="submit"
           className="login-button"
@@ -198,14 +212,13 @@ const Profile = () => {
           {loading ? "Updating..." : "Update Profile"}
         </button>
 
-        {/* THÊM NÚT LOGOUT MỚI - Đặt ở dưới cùng, màu đỏ để nổi bật */}
         <button
-          type="button" // Không submit form
+          type="button"
           onClick={handleLogout}
           className="login-button"
           disabled={loading}
           style={{
-            backgroundColor: "#dc3545", // Màu đỏ cho logout
+            backgroundColor: "#dc3545",
             marginTop: "10px",
           }}
         >

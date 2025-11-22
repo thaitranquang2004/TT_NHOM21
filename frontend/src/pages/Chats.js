@@ -55,9 +55,6 @@ const Chats = ({ onSelectChat, activeChatId }) => {
     <div className="chats-sidebar">
       <div className="chats-header">
         <h2>Chats</h2>
-        <button onClick={() => setIsModalOpen(true)} className="button-icon" title="New Chat">
-          <i className="fas fa-plus"></i> +
-        </button>
       </div>
 
       <ul className="chat-list">
@@ -69,11 +66,13 @@ const Chats = ({ onSelectChat, activeChatId }) => {
 
         {chats.map((chat) => {
           const chatName = getChatName(chat);
+          const chatId = chat._id || chat.id;
+          
           return (
             <li 
-                key={chat._id || chat.id} 
-                className={`chat-item ${activeChatId === (chat._id || chat.id) ? 'active' : ''}`}
-                onClick={() => onSelectChat(chat._id || chat.id)}
+                key={chatId} 
+                className={`chat-item ${activeChatId === chatId ? 'active' : ''}`}
+                onClick={() => onSelectChat(chatId)}
             >
                 <div className="chat-avatar-placeholder">
                 {chatName[0]?.toUpperCase() || "C"}

@@ -73,6 +73,17 @@
   background-color: #f9f9f9; /* Hiệu ứng khi di chuột */
 }
 
+.chat-item.active {
+  background-color: #e3f2fd; /* Màu xanh nhạt khi được chọn */
+  border-left: 4px solid #2196f3; /* Border xanh bên trái */
+  padding-left: 11px; /* Giảm padding để bù border */
+}
+
+.chat-item.active .chat-name {
+  color: #1976d2; /* Màu xanh đậm cho tên chat */
+  font-weight: 700; /* Đậm hơn */
+}
+
 /* Vòng tròn Avatar (placeholder) */
 .chat-avatar-placeholder {
   width: 50px;

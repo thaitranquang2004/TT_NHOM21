@@ -21,8 +21,8 @@ router.get("/profile", authJWT, getProfile);
 router.put(
   "/profile",
   authJWT,
-  validateProfileUpdate,
   upload.single("avatar"),
+  validateProfileUpdate,
   updateProfile
 );
 

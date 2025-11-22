@@ -1,4 +1,5 @@
 import React from "react";
+import { MessageCircle, Users, User, LogOut } from "lucide-react";
 import "./Sidebar.css";
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
@@ -7,35 +8,35 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       <div
         className={`sidebar-item ${activeTab === "chats" ? "active" : ""}`}
         onClick={() => setActiveTab("chats")}
+        title="Chats"
       >
-        <i className="fas fa-comment-alt"></i>
-        <span>Chats</span>
+        <MessageCircle size={24} />
       </div>
       <div
         className={`sidebar-item ${activeTab === "friends" ? "active" : ""}`}
         onClick={() => setActiveTab("friends")}
+        title="Friends"
       >
-        <i className="fas fa-user-friends"></i>
-        <span>Friends</span>
+        <Users size={24} />
       </div>
       <div
         className={`sidebar-item ${activeTab === "profile" ? "active" : ""}`}
         onClick={() => setActiveTab("profile")}
+        title="Profile"
       >
-        <i className="fas fa-user"></i>
-        <span>Profile</span>
+        <User size={24} />
       </div>
 
       <div className="sidebar-footer">
         <div
-          className="sidebar-item"
+          className="sidebar-item logout-button"
           onClick={() => {
             localStorage.clear();
             window.location.href = "/";
           }}
+          title="Logout"
         >
-          <i className="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
+          <LogOut size={24} />
         </div>
       </div>
     </div>

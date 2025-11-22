@@ -55,4 +55,4 @@ export const disconnectSocket = () => {
 };
 
 // Getter để export default instance (singleton) – Khớp với import default ở components
-export default socket; // Default export: import socket from '../utils/socket'; sẽ lấy instance này
+export { socket }; // Export named variable for live binding

@@ -9,6 +9,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { jwtDecode } from "jwt-decode"; // npm install jwt-decode nếu chưa (cho expiry check)
+import { initSocket } from "./utils/socket"; // Import initSocket
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -54,6 +55,7 @@ const MainLayout = () => {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 > Date.now()) {
           setIsAuthenticated(true);
+          initSocket(token); // Initialize socket
           if (window.socket) {
             window.socket.emit("joinUser", decoded.id || decoded.userId);
           }

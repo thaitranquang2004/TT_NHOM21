@@ -1,4 +1,5 @@
 import Chat from "../models/Chat.js";
+import User from "../models/User.js";
 
 // Create chat
 export const createChat = async (req, res) => {
@@ -7,6 +8,24 @@ export const createChat = async (req, res) => {
     if (type === "group" && (!name || participants.length < 2))
       return res.status(400).json({ message: "Invalid group" });
 
+    // Enforce friendship for direct chats
+    if (type === "direct") {
+      const otherUserId = participants[0];
+      // Reload user with friends to be sure
+      const currentUser = await User.findById(req.user._id);
+      if (!currentUser.friends.includes(otherUserId)) {
+         return res.status(403).json({ message: "You can only message friends" });
+      }
+
+      const existingChat = await Chat.findOne({
+        type: "direct",
+        participants: { $all: [...participants, req.user._id], $size: 2 },
+      });
+      if (existingChat) {
+        return res.json({ chatId: existingChat._id.toString(), message: "Existing chat returned" });
+      }
+    }
+
     const chat = new Chat({
       type,
       name: type === "group" ? name : undefined,
@@ -14,8 +33,9 @@ export const createChat = async (req, res) => {
     });
     await chat.save();
 
-    res.json({ chatId: chat._id, message: "Created" });
+    res.json({ chatId: chat._id.toString(), message: "Created" });
   } catch (err) {
+    console.error("Error in createChat:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -89,6 +109,7 @@ export const listChats = async (req, res) => {
       },
       {
         $project: {
+          _id: { $toString: "$_id" },  // Convert ObjectId to string
           name: 1,
           type: 1,
           participants: 1,
@@ -97,8 +118,32 @@ export const listChats = async (req, res) => {
         },
       },
     ]);
+    
     res.json({ chats });
   } catch (err) {
+    console.error("Error in listChats:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get single chat details
+export const getChatDetails = async (req, res) => {
+  try {
+    const chat = await Chat.findById(req.params.chatId)
+      .populate("participants", "username fullName avatar");
+
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    // Check if participant
+    if (!chat.participants.some((p) => p._id.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    
+    res.json({ chat });
+  } catch (err) {
+    console.error("Error in getChatDetails:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
