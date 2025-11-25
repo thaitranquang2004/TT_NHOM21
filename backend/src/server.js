@@ -28,32 +28,26 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-// ==================== FIX CORS & SOCKET.IO TRIỆT ĐỂ CHO LOCAL + RENDER ====================
-const allowedOrigins = [
-  "http://localhost:3000",                    // Local dev
-  "http://localhost:5000",                    // Local prod (served by backend)
-  "https://band-m-chat.onrender.com",         // Frontend Render
-];
+// SIMPLE CORS - Local dev only
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}));
 
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-};
+// Disable Helmet CSP for local dev
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 
-// Áp dụng CORS cho Express
-app.use(cors(corsOptions));
-
-// Socket.io config HOÀN HẢO (fix transport close forever)
+// SIMPLE Socket.IO - Bare minimum config
 const io = new Server(server, {
-  path: "/socket.io/",                        // BẮT BUỘC PHẢI CÓ!
-  cors: corsOptions,                          // Đồng bộ với Express CORS
-  transports: ["websocket"],                  // Chỉ dùng websocket (Render yêu cầu)
-  pingTimeout: 60000,
-  pingInterval: 25000,
+  cors: {
+    origin: "http://localhost:3000",
+    credentials: true
+  }
 });
 
-console.log("Socket.io khởi tạo thành công với path: /socket.io/");
+console.log("✅ Socket.IO initialized (minimal config)");
 
 // Connect MongoDB
 mongoose
@@ -65,15 +59,11 @@ mongoose
   });
 
 // Middleware
-app.use(helmet({
-  contentSecurityPolicy: false, // Tắt helmet CSP vì frontend tự handle
-}));
 app.use(morgan("combined"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Rate limit
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
@@ -100,7 +90,7 @@ app.use("/api/messages", limiter, messageRoutes);
 app.use("/api/reactions", reactionRoutes);
 
 // Socket setup
-import("./sockets/index.js").then(({ default: setupSockets }) => {
+import("./sockets/socketManager.js").then(({ setupSockets }) => {
   setupSockets(io);
 });
 
@@ -126,14 +116,13 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-// 404 cuối cùng
 app.use((req, res) => {
   res.status(404).json({ message: "API Route Not Found" });
 });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Band M Backend chạy mượt trên port ${PORT}`);
+  console.log(`🚀 Band M Backend on port ${PORT}`);
   console.log(`   Local: http://localhost:${PORT}`);
   if (process.env.RENDER_EXTERNAL_URL) {
     console.log(`   Render: ${process.env.RENDER_EXTERNAL_URL}`);

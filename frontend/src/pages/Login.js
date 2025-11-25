@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
-import { socket, initSocket } from "../utils/socket";
+
 import "./Login.css";
 
 const Login = () => {
@@ -54,11 +54,7 @@ const Login = () => {
 
       // Socket join cho online status (theo Band M flowchart: Set Session → Join Room)
       // Socket join cho online status
-      const newSocket = initSocket(response.data.accessToken);
-      if (newSocket) {
-        newSocket.emit("joinUser", response.data.user.id);
-        console.log("Socket joined user room:", response.data.user.id);
-      }
+      // Navigate sang / (App.js sẽ auto-check & pass ProtectedRoute)
 
       // Navigate sang / (App.js sẽ auto-check & pass ProtectedRoute)
       navigate("/", { replace: true }); // replace tránh back history

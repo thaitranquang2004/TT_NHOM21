@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
-import { socket } from "../utils/socket";
+import { useSocket } from "../context/SocketContext";
 import "./Friends.css";
 
 const Friends = ({ onSelectChat }) => {
@@ -12,6 +12,7 @@ const Friends = ({ onSelectChat }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { socket, onlineUsers } = useSocket();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -67,13 +68,11 @@ const Friends = ({ onSelectChat }) => {
       socket.on("friendAccepted", handleFriendAccepted);
 
       return () => {
-        if (socket) {
-            socket.off("friendRequest", handleFriendRequest);
-            socket.off("friendAccepted", handleFriendAccepted);
-        }
+          socket.off("friendRequest", handleFriendRequest);
+          socket.off("friendAccepted", handleFriendAccepted);
       };
     }
-  }, []);
+  }, [socket]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -227,44 +226,47 @@ const Friends = ({ onSelectChat }) => {
               <p>{searchQuery ? "Try a different search term" : "Search for people to add!"}</p>
             </div>
           ) : (
-            friends.map((friend) => (
-              <div key={friend._id || friend.id} className="friend-card">
-                <div className="friend-card-header">
-                  <div className="friend-avatar-large">
-                    {friend.avatar ? (
-                      <img src={friend.avatar} alt={friend.fullName} />
-                    ) : (
-                      <span>{friend.username?.[0]?.toUpperCase()}</span>
-                    )}
+            friends.map((friend) => {
+                const isOnline = onlineUsers.includes(friend._id || friend.id) || friend.onlineStatus;
+                return (
+                  <div key={friend._id || friend.id} className="friend-card">
+                    <div className="friend-card-header">
+                      <div className="friend-avatar-large">
+                        {friend.avatar ? (
+                          <img src={friend.avatar} alt={friend.fullName} />
+                        ) : (
+                          <span>{friend.username?.[0]?.toUpperCase()}</span>
+                        )}
+                      </div>
+                      {isOnline && <span className="online-badge"></span>}
+                    </div>
+
+                    <div className="friend-card-body">
+                      <h3 className="friend-name">{friend.fullName}</h3>
+                      <p className="friend-username">@{friend.username}</p>
+                    </div>
+
+                    <div className="friend-card-actions">
+                      {myFriendIds.has(friend._id || friend.id) ? (
+                        <button
+                          onClick={() => handleMessage(friend._id || friend.id)}
+                          className="button button-primary button-full"
+                        >
+                          Message
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => sendRequest(friend._id || friend.id)}
+                          className="button button-secondary button-full"
+                          disabled={loading}
+                        >
+                          Add Friend
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {friend.onlineStatus && <span className="online-badge"></span>}
-                </div>
-
-                <div className="friend-card-body">
-                  <h3 className="friend-name">{friend.fullName}</h3>
-                  <p className="friend-username">@{friend.username}</p>
-                </div>
-
-                <div className="friend-card-actions">
-                  {myFriendIds.has(friend._id || friend.id) ? (
-                    <button
-                      onClick={() => handleMessage(friend._id || friend.id)}
-                      className="button button-primary button-full"
-                    >
-                      Message
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => sendRequest(friend._id || friend.id)}
-                      className="button button-secondary button-full"
-                      disabled={loading}
-                    >
-                      Add Friend
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+                );
+            })
           )}
         </div>
       </div>

@@ -95,14 +95,19 @@ export const sendMessage = async (req, res) => {
     );
 
     // Emit real-time (Use ORIGINAL content, not encrypted one from DB)
-    req.io?.to(`chat_${chatId}`).emit("newMessage", {
+    const messageData = {
+      _id: message._id,
       id: message._id,
+      chat: chatId, // Add chatId for frontend filtering
       content: content, // Use plain text content from request
       sender: populatedMessage.sender,
       type,
       mediaUrl,
       createdAt: message.createdAt,
-    });
+    };
+    
+    // Emit to chat room (for all participants including sender)
+    req.io?.to(`chat_${chatId}`).emit("newMessage", messageData);
 
     res.json({ messageId: message._id, message: "Sent" });
   } catch (err) {
@@ -150,6 +155,53 @@ export const deleteMessage = async (req, res) => {
 
     res.json({ message: "Deleted" });
   } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// React to message
+export const reactToMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { type } = req.body;
+    const userId = req.user._id;
+
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    // Check if user already reacted with this type
+    const existingReactionIndex = message.reactions.findIndex(
+      (r) => r.user.toString() === userId.toString() && r.type === type
+    );
+
+    if (existingReactionIndex > -1) {
+      // Remove reaction (toggle off)
+      message.reactions.splice(existingReactionIndex, 1);
+    } else {
+      // Add reaction
+      // Optional: Remove other reactions by same user if you only want one reaction per user
+      // message.reactions = message.reactions.filter(r => r.user.toString() !== userId.toString());
+      
+      message.reactions.push({ user: userId, type });
+    }
+
+    await message.save();
+
+    // Populate reactions.user to send back full info
+    const populatedMessage = await Message.findById(messageId).populate(
+      "reactions.user",
+      "username fullName avatar"
+    );
+
+    const reactionData = {
+      messageId,
+      reactions: populatedMessage.reactions,
+    };
+
+    req.io?.to(`chat_${message.chat}`).emit("messageReactionUpdate", reactionData);
+
+    res.json(reactionData);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };

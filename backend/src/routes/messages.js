@@ -6,6 +6,7 @@ import {
   sendMessage,
   editMessage,
   deleteMessage,
+  reactToMessage,
 } from "../controllers/messageController.js";
 
 const router = express.Router();
@@ -22,5 +23,8 @@ router.put("/:messageId", authJWT, editMessage);
 
 // Delete message (soft)
 router.delete("/:messageId", authJWT, deleteMessage);
+
+// React to message
+router.post("/:messageId/react", authJWT, reactToMessage);
 
 export default router;

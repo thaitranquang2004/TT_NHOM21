@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../utils/api";
-import { socket } from "../utils/socket";
-import { Send } from "lucide-react";
+import { useSocket } from "../context/SocketContext";
+import { Send, Smile } from "lucide-react";
 import "./ChatWindow.css";
 
 const ChatWindow = ({ chatId }) => {
@@ -10,6 +10,7 @@ const ChatWindow = ({ chatId }) => {
   const [chatInfo, setChatInfo] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const messagesEndRef = useRef(null);
+  const { socket } = useSocket();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -41,30 +42,15 @@ const ChatWindow = ({ chatId }) => {
       }
     };
 
-    // We also need chat info (name, participants) to display in header
-    // Ideally backend should provide an endpoint or we extract from list
-    // For now, let's assume we can get it from a separate call or passed props.
-    // Since props only have chatId, let's fetch chat details if possible.
-    // If not, we might show generic info.
-    // Let's try to find it from the cache or fetch it.
-    // Since we don't have a direct "get chat details" endpoint in the list I saw earlier (only create/list),
-    // we might rely on the list in Dashboard or add an endpoint.
-    // Wait, `chats.js` has `listChats` but not `getChatDetails`.
-    // Let's just use a placeholder or try to fetch from list if we had context.
-    // For now, I'll just fetch messages.
-
     fetchMessages();
 
     if (socket) {
-        socket.emit("joinRoom", chatId);
-        
         const handleNewMessage = (msg) => {
             // Check if message belongs to current chat
-            // The msg object structure depends on backend emit.
-            // Backend emits: { id, content, sender, type, mediaUrl, createdAt } to room `chat_${chatId}`
-            // So we don't strictly need to check chatId if we trust room separation, but good to be safe if logic changes.
-            setMessages((prev) => [...prev, msg]);
-            scrollToBottom();
+            if (msg.chat === chatId || msg.chatId === chatId) {
+                setMessages((prev) => [...prev, msg]);
+                scrollToBottom();
+            }
         };
 
         socket.on("newMessage", handleNewMessage);
@@ -77,22 +63,26 @@ const ChatWindow = ({ chatId }) => {
            setMessages((prev) => prev.filter((m) => m._id !== msg.messageId));
         });
 
+        socket.on("messageReactionUpdate", ({ messageId, reactions }) => {
+          setMessages((prev) =>
+            prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
+          );
+        });
+
         return () => {
           socket.off("newMessage", handleNewMessage);
           socket.off("messageEdited");
           socket.off("messageDeleted");
+          socket.off("messageReactionUpdate");
         };
     }
-  }, [chatId]);
+  }, [chatId, socket]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
     try {
-      const response = await api.post("/messages/send", { chatId, content });
-      // Socket emit is handled in backend controller now, so we don't need to emit manually here
-      // unless we want optimistic UI. Backend emits to room.
-      // We just clear input.
+      await api.post("/messages/send", { chatId, content });
       setContent("");
     } catch (error) {
       console.error("Send failed", error);
@@ -100,16 +90,12 @@ const ChatWindow = ({ chatId }) => {
     }
   };
 
-  // Helper to get chat name/avatar
-  const getChatDetails = () => {
-    // If we have chatInfo from props or fetched, use it.
-    // Since we don't have a direct "getChat" endpoint used here yet, we rely on what we have.
-    // But we need to know the "other" user for direct chats.
-    // We can try to find it from the messages if we don't have chat details? No, that's unreliable.
-    // Best way: Fetch chat details or pass them.
-    // Since we only have chatId, let's fetch the chat details.
-    // I'll add a fetchChatDetails function.
-    return { name: "Chat", avatar: "#" }; 
+  const handleReaction = async (messageId, type) => {
+    try {
+      await api.post(`/messages/${messageId}/react`, { type });
+    } catch (error) {
+      console.error("Reaction failed", error);
+    }
   };
 
   // Fetch chat details
@@ -117,13 +103,6 @@ const ChatWindow = ({ chatId }) => {
       if(!chatId) return;
       const fetchChatDetails = async () => {
           try {
-              // We can reuse the list endpoint or add a specific one. 
-              // But wait, the list endpoint returns all chats. We can find it there if we had the list context.
-              // Or we can just call GET /chats and find it? Inefficient but works for now.
-              // Better: GET /chats/:chatId (need to implement or check if exists).
-              // It doesn't exist in my summary.
-              // Let's use the list for now or just rely on messages for participants?
-              // Actually, `api.get("/chats")` returns the list. Let's fetch it and find the chat.
               const res = await api.get("/chats");
               const found = res.data.chats.find(c => c._id === chatId || c.id === chatId);
               if(found) {
@@ -173,10 +152,32 @@ const ChatWindow = ({ chatId }) => {
             
             return (
                 <div key={msg._id || msg.id} className={`message-group ${isSent ? 'sent' : 'received'}`}>
-                    <div className="message-bubble">
-                        {/* Ensure content is string */}
-                        {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
+                    <div className="message-bubble-container">
+                      <div className="message-bubble">
+                          {/* Ensure content is string */}
+                          {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
+                      </div>
+                      <div className="reaction-actions">
+                        {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
+                          <button 
+                            key={emoji} 
+                            className="reaction-btn-mini"
+                            onClick={() => handleReaction(msg._id, emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                    {msg.reactions && msg.reactions.length > 0 && (
+                      <div className="message-reactions">
+                        {msg.reactions.map((r, idx) => (
+                          <span key={idx} className="reaction-item" title={r.user?.username}>
+                            {r.type}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="message-info">
                         {!isSent && <span className="sender-name">{senderName}</span>}
                         <span className="message-time">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
-import { disconnectSocket } from "../utils/socket";
 import "./Login.css";
 
 const Profile = () => {
@@ -92,11 +91,9 @@ const Profile = () => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("session");
-      disconnectSocket(); // Disconnect socket
       navigate("/");
     } catch (error) {
       localStorage.clear();
-      disconnectSocket(); // Ensure disconnect even on error
       navigate("/login");
       alert("Logged out, but server error occurred: " + error.message);
     } finally {

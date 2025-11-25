@@ -1,34 +1,33 @@
-import React, { useEffect, useState } from "react"; // Thêm useEffect, useState
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Link,
   Navigate,
-  useNavigate, // Thêm useNavigate cho redirect
+  useNavigate,
   useLocation,
 } from "react-router-dom";
-import { jwtDecode } from "jwt-decode"; // npm install jwt-decode nếu chưa (cho expiry check)
-import { initSocket } from "./utils/socket"; // Import initSocket
+import { jwtDecode } from "jwt-decode";
+import { SocketProvider } from "./context/SocketContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 
 // Protected Route (check accessToken & expiry)
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("accessToken"); // Thống nhất key với Login.js
+  const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) {
-      navigate("/login", { replace: true }); // Không token → login
+      navigate("/login", { replace: true });
       return;
     }
     try {
       const decoded = jwtDecode(token);
       if (decoded.exp * 1000 < Date.now()) {
         // Token expire
-        localStorage.clear(); // Clear token & user
+        localStorage.clear();
         navigate("/", { replace: true });
       }
     } catch (err) {
@@ -38,8 +37,8 @@ const ProtectedRoute = ({ children }) => {
     }
   }, [token, navigate]);
 
-  if (!token) return <Navigate to="/login" replace />; // Block nếu không token
-  return children; // OK → render
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
 };
 
 // MainLayout: Chứa Navbar + Routes + Auto-redirect logic
@@ -74,37 +73,23 @@ const MainLayout = () => {
     }
   }, [location.pathname, navigate]);
 
-  // Effect 2: Init Socket (Runs ONLY when token changes or component mounts)
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 > Date.now()) {
-          // Only init if not already connected or if token changed
-          initSocket(token); 
-        }
-      } catch (e) {
-        console.error("Socket init failed:", e);
-      }
-    }
-  }, []); // Empty dependency or [isAuthenticated] to run once on load/login
-
   return (
-    <div className="app">
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </div>
+    <SocketProvider isAuthenticated={isAuthenticated}>
+      <div className="app">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+    </SocketProvider>
   );
 };
 

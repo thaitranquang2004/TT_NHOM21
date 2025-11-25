@@ -14,6 +14,12 @@ const messageSchema = new mongoose.Schema(
     mediaUrl: { type: String }, // Cloudinary URL for media
     isEdited: { type: Boolean, default: false },
     deletedAt: { type: Date },
+    reactions: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        type: { type: String, required: true },
+      },
+    ],
   },
   { timestamps: true }
 );

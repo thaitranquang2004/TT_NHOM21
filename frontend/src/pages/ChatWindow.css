@@ -180,3 +180,70 @@
   margin-bottom: 15px;
   color: #ddd;
 }
+
+/* Reactions */
+.message-bubble-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reaction-actions {
+  display: none;
+  position: absolute;
+  top: -30px;
+  background: white;
+  border-radius: 20px;
+  padding: 2px 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.message-group.sent .reaction-actions {
+  right: 0;
+}
+
+.message-group.received .reaction-actions {
+  left: 0;
+}
+
+.message-bubble-container:hover .reaction-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.reaction-btn-mini {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+  transition: transform 0.1s;
+}
+
+.reaction-btn-mini:hover {
+  transform: scale(1.2);
+}
+
+.message-reactions {
+  display: flex;
+  gap: 2px;
+  margin-top: -5px;
+  margin-bottom: 2px;
+  padding: 0 5px;
+  z-index: 1;
+}
+
+.message-group.sent .message-reactions {
+  justify-content: flex-end;
+}
+
+.reaction-item {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 1px 4px;
+  font-size: 10px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
