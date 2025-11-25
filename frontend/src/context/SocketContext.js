@@ -15,8 +15,10 @@ export const SocketProvider = ({ children, isAuthenticated }) => {
     const token = localStorage.getItem("accessToken");
 
     if (isAuthenticated && token) {
-      // SIMPLE connection - let Socket.IO handle everything
-      const newSocket = io("http://localhost:5000", {
+      // Use environment variable for production, fallback to localhost for dev
+      const socketUrl = process.env.REACT_APP_SOCKET_URL || "http://localhost:5000";
+      
+      const newSocket = io(socketUrl, {
         auth: { token: `Bearer ${token}` }
       });
 

@@ -30,7 +30,7 @@ const server = http.createServer(app);
 
 // SIMPLE CORS - Local dev only
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: true,
   credentials: true
 }));
 
@@ -42,7 +42,7 @@ app.use(helmet({
 // SIMPLE Socket.IO - Bare minimum config
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: true,
     credentials: true
   }
 });
@@ -99,7 +99,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 app.use(errorHandler);
 
 // Production serve frontend
-if (process.env.NODE_ENV === "production") {
+
   const frontendDistPath = path.join(__dirname, "../../frontend/build");
   
   if (fs.existsSync(frontendDistPath)) {
@@ -114,7 +114,7 @@ if (process.env.NODE_ENV === "production") {
   } else {
     console.error("Frontend build not found! Run: cd frontend && npm run build");
   }
-}
+
 
 app.use((req, res) => {
   res.status(404).json({ message: "API Route Not Found" });
