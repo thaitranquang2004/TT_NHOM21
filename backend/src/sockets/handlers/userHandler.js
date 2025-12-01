@@ -1,4 +1,4 @@
-import User from "../../models/User.js";  // FIX: Đường dẫn đúng (từ handlers/)
+import User from "../../models/User.js";
 import Chat from "../../models/Chat.js";
 
 export const userHandler = (io, socket) => {

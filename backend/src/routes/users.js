@@ -12,7 +12,7 @@ import {
 } from "../controllers/userController.js";
 
 const router = express.Router();
-const upload = multer({ dest: "uploads/" }); // Temp folder cho files
+const upload = multer({ dest: "uploads/" });
 
 // Get profile
 router.get("/profile", authJWT, getProfile);

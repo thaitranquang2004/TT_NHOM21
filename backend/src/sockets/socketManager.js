@@ -31,7 +31,7 @@ export const setupSockets = (io) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`✅ User connected: ${socket.user.username} (${socket.id})`);
+    console.log(`User connected: ${socket.user.username} (${socket.id})`);
 
     // Initialize handlers (trả về functions từ userHandler)
     const { handleUserOffline, handleJoinMyChats } = userHandler(io, socket);

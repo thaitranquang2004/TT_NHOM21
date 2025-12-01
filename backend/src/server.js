@@ -47,7 +47,7 @@ const io = new Server(server, {
   }
 });
 
-console.log("✅ Socket.IO initialized (minimal config)");
+console.log("Socket.IO initialized (minimal config)");
 
 // Connect MongoDB
 mongoose
@@ -122,9 +122,9 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Band M Backend on port ${PORT}`);
-  console.log(`   Local: http://localhost:${PORT}`);
+  console.log(`Band M Backend on port ${PORT}`);
+  console.log(`Local: http://localhost:${PORT}`);
   if (process.env.RENDER_EXTERNAL_URL) {
-    console.log(`   Render: ${process.env.RENDER_EXTERNAL_URL}`);
+    console.log(`Render: ${process.env.RENDER_EXTERNAL_URL}`);
   }
 });

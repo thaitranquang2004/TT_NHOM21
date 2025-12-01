@@ -1,6 +1,6 @@
 // src/routes/auth.js
 import express from "express";
-import { body, validationResult } from "express-validator"; // Giữ nếu cần cho validate middleware
+import { body, validationResult } from "express-validator";
 import { authJWT } from "../middleware/auth.js";
 import { validateRegister, validateLogin } from "../middleware/validate.js";
 import {
@@ -8,7 +8,7 @@ import {
   login,
   logout,
   refreshToken,
-} from "../controllers/authController.js"; // Import controllers mới
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
