@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import "./Login.css";
 
@@ -9,7 +8,6 @@ const Profile = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -22,9 +20,6 @@ const Profile = () => {
           "Profile load failed: " +
             (error.response?.data?.message || error.message)
         );
-        if (error.response?.status === 401) {
-          handleLogout();
-        }
       } finally {
         setLoading(false);
       }
@@ -79,23 +74,6 @@ const Profile = () => {
       alert(
         "Update failed: " + (error.response?.data?.message || error.message)
       );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
-      await api.post("/auth/logout");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("session");
-      navigate("/");
-    } catch (error) {
-      localStorage.clear();
-      navigate("/login");
-      alert("Logged out, but server error occurred: " + error.message);
     } finally {
       setLoading(false);
     }

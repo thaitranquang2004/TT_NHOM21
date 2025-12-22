@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../utils/api";
 import { useSocket } from "../context/SocketContext";
-import { Send, Smile } from "lucide-react";
+import { Send } from "lucide-react";
 import "./ChatWindow.css";
 
 const ChatWindow = ({ chatId }) => {

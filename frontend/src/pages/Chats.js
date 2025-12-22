@@ -5,7 +5,6 @@ import "./Chats.css";
 const Chats = ({ onSelectChat, activeChatId }) => {
   const [chats, setChats] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,23 +21,6 @@ const Chats = ({ onSelectChat, activeChatId }) => {
     };
     fetchData();
   }, []);
-
-  const handleUserSelect = async (user) => {
-    try {
-      const response = await api.post("/chats/create", {
-        type: "direct",
-        participants: [user._id || user.id],
-      });
-      const res = await api.get("/chats");
-      setChats(res.data.chats);
-
-      setIsModalOpen(false);
-      onSelectChat(response.data.chatId);
-    } catch (error) {
-      console.error("Create chat failed", error);
-      alert("Failed to create chat");
-    }
-  };
 
   const getChatName = (chat) => {
     if (chat.name) return chat.name;
