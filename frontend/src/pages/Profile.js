@@ -220,19 +220,6 @@ const Profile = () => {
         >
           {loading ? "Updating..." : "Update Profile"}
         </button>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="login-button"
-          disabled={loading}
-          style={{
-            backgroundColor: "#dc3545",
-            marginTop: "10px",
-          }}
-        >
-          {loading ? "Logging out..." : "Logout"}
-        </button>
       </form>
     </div>
   );

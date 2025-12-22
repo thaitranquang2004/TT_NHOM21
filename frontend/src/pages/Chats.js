@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
-import UserSearchModal from "../components/UserSearchModal";
 import "./Chats.css";
 
 const Chats = ({ onSelectChat, activeChatId }) => {
@@ -53,7 +52,7 @@ const Chats = ({ onSelectChat, activeChatId }) => {
   return (
     <div className="chats-sidebar">
       <div className="chats-header">
-        <h2 style={{ marginLeft: "30px", textIndent: "15px" }}>Chats</h2>
+        <h2 style={{ marginLeft: "10px", textIndent: "15px" }}>Chats</h2>
       </div>
 
       <ul className="chat-list">
@@ -79,40 +78,12 @@ const Chats = ({ onSelectChat, activeChatId }) => {
               <div className="chat-info">
                 <div className="chat-name-row">
                   <span className="chat-name">{chatName}</span>
-                  {chat.lastMessageTime && (
-                    <span className="chat-time">
-                      {new Date(chat.lastMessageTime).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  )}
-                </div>
-                <div className="chat-preview">
-                  {chat.unreadCount > 0 ? (
-                    <span className="unread-text">
-                      {chat.unreadCount} new messages
-                    </span>
-                  ) : (
-                    <span className="no-unread">View conversation</span>
-                  )}
                 </div>
               </div>
-              {chat.unreadCount > 0 && (
-                <div className="chat-unread-badge">{chat.unreadCount}</div>
-              )}
             </li>
           );
         })}
       </ul>
-
-      <UserSearchModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelectUser={handleUserSelect}
-        title="New Chat (Friends)"
-        searchMode="friends"
-      />
     </div>
   );
 };

@@ -4,12 +4,12 @@ import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
-    password: { type: String, required: true }, // Hashed
+    password: { type: String, required: true },
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String },
     dob: { type: Date },
-    avatar: { type: String }, // Cloudinary URL
+    avatar: { type: String },
     onlineStatus: { type: Boolean, default: false },
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     unreadCounts: { type: Map, of: Number, default: {} },

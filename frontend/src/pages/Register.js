@@ -64,7 +64,7 @@ const Register = () => {
 
     try {
       await api.post("/auth/register", payload);
-      alert("Register success! Please check email confirmation & login.");
+      alert("Register success!");
       reset();
       navigate("/");
     } catch (error) {

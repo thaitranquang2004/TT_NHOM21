@@ -105,7 +105,7 @@ export const sendMessage = async (req, res) => {
       createdAt: message.createdAt,
     };
 
-    // Emit to chat room
+    // Emit to chat 
     req.io?.to(`chat_${chatId}`).emit("newMessage", messageData);
 
     res.json({ messageId: message._id, message: "Sent" });
@@ -202,34 +202,3 @@ export const reactToMessage = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// Mark seen
-// export const markSeen = async (req, res) => {
-//   try {
-//     const message = await Message.findById(req.params.messageId);
-//     if (!message) return res.status(404).json({ message: "Not found" });
-
-//     // Upsert seen
-//     await MessageSeen.findOneAndUpdate(
-//       { message: req.params.messageId, user: req.user._id },
-//       { seenAt: new Date() },
-//       { upsert: true }
-//     );
-
-//     // Reduce unread count
-//     await User.findByIdAndUpdate(req.user._id, {
-//       $inc: { [`unreadCounts.${message.chat}`]: -1 },
-//     });
-
-//     req.io
-//       ?.to(`chat_${message.chat}`)
-//       .emit("messageSeen", {
-//         messageId: req.params.messageId,
-//         userId: req.user._id,
-//       });
-
-//     res.json({ message: "Seen" });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };

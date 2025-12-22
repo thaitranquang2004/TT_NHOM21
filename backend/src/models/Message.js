@@ -9,9 +9,9 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    content: { type: String, required: true }, // Encrypted string
+    content: { type: String, required: true },
     type: { type: String, enum: ["text", "media"], default: "text" },
-    mediaUrl: { type: String }, // Cloudinary URL for media
+    mediaUrl: { type: String },
     isEdited: { type: Boolean, default: false },
     deletedAt: { type: Date },
     reactions: [

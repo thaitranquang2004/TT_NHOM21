@@ -5,8 +5,8 @@ import User from "../models/User.js";
 export const createChat = async (req, res) => {
   try {
     const { type, participants, name } = req.body;
-    if (type === "group" && (!name || participants.length < 2))
-      return res.status(400).json({ message: "Invalid group" });
+    // if (type === "group" && (!name || participants.length < 2))
+    //   return res.status(400).json({ message: "Invalid group" });
 
     // Enforce friendship for direct chats
     if (type === "direct") {
@@ -39,29 +39,6 @@ export const createChat = async (req, res) => {
     res.json({ chatId: chat._id.toString(), message: "Created" });
   } catch (err) {
     console.error("Error in createChat:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Invite to group
-export const inviteToGroup = async (req, res) => {
-  try {
-    const { userIds } = req.body;
-    const chat = await Chat.findById(req.params.chatId);
-    if (!chat) return res.status(404).json({ message: "Chat not found" });
-
-    if (!chat.participants.includes(req.user._id))
-      return res.status(403).json({ message: "Not authorized" });
-
-    chat.participants.push(...userIds);
-    await chat.save();
-
-    userIds.forEach((userId) => {
-      req.io?.to(userId.toString()).emit("chatInvite", { chatId: chat._id });
-    });
-
-    res.json({ message: "Invited" });
-  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
