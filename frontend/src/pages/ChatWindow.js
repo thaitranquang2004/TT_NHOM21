@@ -144,9 +144,6 @@ const ChatWindow = ({ chatId }) => {
     <div className="chat-window">
       <div className="chat-header">
         <div className="header-user-info">
-          <div className="header-avatar">
-            <span>{chatInfo?.name?.[0]?.toUpperCase() || "#"}</span>
-          </div>
           <div className="header-details">
             <span className="header-name">
               {chatInfo?.name || "Loading..."}
@@ -202,7 +199,6 @@ const ChatWindow = ({ chatId }) => {
                 </div>
               )}
               <div className="message-info">
-                {!isSent && <span className="sender-name">{senderName}</span>}
                 <span className="message-time">
                   {new Date(msg.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -229,6 +225,7 @@ const ChatWindow = ({ chatId }) => {
             type="submit"
             className="send-button"
             disabled={!content.trim()}
+            style={{ marginLeft: "10px", height: "40px", weight: "40px"}}
           >
             <Send size={18} />
           </button>

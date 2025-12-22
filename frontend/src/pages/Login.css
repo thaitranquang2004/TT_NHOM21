@@ -157,3 +157,25 @@ body {
   font-size: 18px;
   color: #007bff;
 }
+.error-message {
+  color: #e74c3c;
+  background-color: #fceae9;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+  text-align: left;
+}
+
+.login-input.error {
+  border-color: #e74c3c;
+}

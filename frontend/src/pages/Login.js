@@ -51,10 +51,14 @@ const Login = () => {
     } catch (error) {
       console.error("Login Error Full:", error);
 
-      const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Đăng nhập thất bại. Thử lại nhé!";
+      let errorMsg = error.response?.data?.message || error.message || "Đăng nhập thất bại. Thử lại nhé!";
+      
+      if (errorMsg === "Invalid credentials") {
+        errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
+      } else if (errorMsg === "Username/Email exists") {
+        errorMsg = "Tên đăng nhập hoặc Email đã tồn tại.";
+      }
+      
       setError(errorMsg);
     } finally {
       setLoading(false);
@@ -100,10 +104,6 @@ const Login = () => {
         </button>
 
         <div className="form-footer">
-          <a href="/forgot-password" className="footer-link">
-            Quên mật khẩu?
-          </a>
-
           <span className="footer-text">
             Chưa có tài khoản?{" "}
             <Link to="/register" className="footer-link">

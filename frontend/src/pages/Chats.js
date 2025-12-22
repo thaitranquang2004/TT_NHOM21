@@ -1,35 +1,41 @@
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
+import { useSocket } from "../context/SocketContext";
 import "./Chats.css";
 
 const Chats = ({ onSelectChat, activeChatId }) => {
   const [chats, setChats] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const { socket } = useSocket();
+
+  const fetchData = async () => {
+    try {
+      const [chatsRes, userRes] = await Promise.all([
+        api.get("/chats"),
+        api.get("/users/profile"),
+      ]);
+      setChats(chatsRes.data.chats);
+      setCurrentUser(userRes.data.user);
+    } catch (error) {
+      console.error("Data load failed", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [chatsRes, userRes] = await Promise.all([
-          api.get("/chats"),
-          api.get("/users/profile"),
-        ]);
-        setChats(chatsRes.data.chats);
-        setCurrentUser(userRes.data.user);
-      } catch (error) {
-        console.error("Data load failed", error);
-      }
-    };
     fetchData();
   }, []);
 
-  const getChatName = (chat) => {
-    if (chat.name) return chat.name;
-    if (chat.type === "direct" || chat.participants.length === 2) {
-      const other = chat.participants.find((p) => p._id !== currentUser?._id);
-      return other ? other.fullName || other.username : "Chat";
+  useEffect(() => {
+    if (socket) {
+      socket.on("newMessage", (newMessage) => {
+        // Refresh list to re-order and show latest info
+        fetchData();
+      });
+      return () => socket.off("newMessage");
     }
-    return "Group Chat";
-  };
+  }, [socket]);
+
+  if (!currentUser) return null;
 
   return (
     <div className="chats-sidebar">
@@ -39,14 +45,21 @@ const Chats = ({ onSelectChat, activeChatId }) => {
 
       <ul className="chat-list">
         {chats.length === 0 && (
-          <p className="no-chats-placeholder">
-            No chats yet. Start a new conversation!
+          <p className="no-chats-placeholder" style={{ textAlign: "center" }}>
+            No chats yet. <br/> Start a new conversation!
           </p>
         )}
 
         {chats.map((chat) => {
-          const chatName = getChatName(chat);
           const chatId = chat._id || chat.id;
+          const isDirect = chat.type === "direct" || chat.participants.length === 2;
+          const otherUser = isDirect 
+            ? chat.participants.find((p) => p._id !== currentUser?._id) 
+            : null;
+          
+          const chatName = chat.name || (otherUser ? otherUser.fullName || otherUser.username : "Chat");
+          const avatar = isDirect ? otherUser?.avatar : chat.avatar;
+          const initials = (chatName || "?")[0].toUpperCase();
 
           return (
             <li
@@ -55,7 +68,11 @@ const Chats = ({ onSelectChat, activeChatId }) => {
               onClick={() => onSelectChat(chatId)}
             >
               <div className="chat-avatar-placeholder">
-                {chatName[0]?.toUpperCase() || "C"}
+                {avatar ? (
+                  <img src={avatar} alt={chatName} />
+                ) : (
+                  <span>{initials}</span>
+                )}
               </div>
               <div className="chat-info">
                 <div className="chat-name-row">

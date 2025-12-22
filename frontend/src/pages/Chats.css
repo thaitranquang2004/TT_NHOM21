@@ -87,6 +87,14 @@
   color: #495057;
   margin-right: 15px;
   text-transform: uppercase;
+  overflow: hidden;
+}
+
+.chat-avatar-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .chat-info {

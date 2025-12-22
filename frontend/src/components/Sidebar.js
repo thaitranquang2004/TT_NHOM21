@@ -1,5 +1,6 @@
 import React from "react";
 import { MessageCircle, Users, User, LogOut } from "lucide-react";
+import api from "../utils/api";
 import "./Sidebar.css";
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
@@ -30,9 +31,17 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       <div className="sidebar-footer">
         <div
           className="sidebar-item logout-button"
-          onClick={() => {
-            localStorage.clear();
-            window.location.href = "/";
+          onClick={async () => {
+            if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+              try {
+                await api.post("/auth/logout");
+              } catch (error) {
+                console.error("Logout API failed:", error);
+              } finally {
+                localStorage.clear();
+                window.location.href = "/";
+              }
+            }
           }}
           title="Logout"
         >

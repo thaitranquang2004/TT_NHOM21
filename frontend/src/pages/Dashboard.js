@@ -43,7 +43,7 @@ const Dashboard = () => {
         )}
         
         {activeTab === 'profile' && (
-            <div className="profile-view">
+            <div className="profile-view" style={{ display: 'flex',justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
                 <Profile />
             </div>
         )}

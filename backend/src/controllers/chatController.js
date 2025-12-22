@@ -72,8 +72,10 @@ export const listChats = async (req, res) => {
               0,
             ],
           },
+          sortTime: { $ifNull: [{ $arrayElemAt: ["$lastMsg.createdAt", 0] }, "$updatedAt"] }
         },
       },
+      { $sort: { sortTime: -1 } },
       { $skip: parseInt(offset) },
       { $limit: parseInt(limit) },
       {

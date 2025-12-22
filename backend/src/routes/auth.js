@@ -1,7 +1,6 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
 import { authJWT } from "../middleware/auth.js";
-import { validateRegister, validateLogin } from "../middleware/validate.js";
 import {
   register,
   login,
@@ -12,10 +11,10 @@ import {
 const router = express.Router();
 
 // Register: Gắn middleware validate + controller
-router.post("/register", validateRegister, register);
+router.post("/register", register);
 
 // Login: Gắn middleware + controller
-router.post("/login", validateLogin, login);
+router.post("/login", login);
 
 // Logout: Gắn authJWT + controller
 router.post("/logout", authJWT, logout);

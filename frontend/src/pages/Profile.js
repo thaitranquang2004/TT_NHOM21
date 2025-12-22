@@ -92,8 +92,6 @@ const Profile = () => {
   return (
     <div className="login-container">
       <form onSubmit={handleUpdate} className="login-form">
-        <h1 className="login-title">Band M Profile</h1>
-
         <div className="profile-avatar-section">
             <div className="profile-avatar-placeholder" onClick={() => document.getElementById('avatar-input').click()} style={{cursor: 'pointer', overflow: 'hidden'}}>
             {previewUrl ? (
@@ -161,6 +159,7 @@ const Profile = () => {
             className="login-input"
             value={user.email || ""}
             onChange={handleChange}
+            disabled
           />
         </div>
 

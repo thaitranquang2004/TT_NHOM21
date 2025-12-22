@@ -2,10 +2,6 @@ import express from "express";
 import multer from "multer";
 import { authJWT } from "../middleware/auth.js";
 import {
-  validateProfileUpdate,
-  validateUserSearch,
-} from "../middleware/validate.js";
-import {
   getProfile,
   updateProfile,
   searchUsers,
@@ -22,11 +18,10 @@ router.put(
   "/profile",
   authJWT,
   upload.single("avatar"),
-  validateProfileUpdate,
   updateProfile
 );
 
 // Search users
-router.get("/search", authJWT, validateUserSearch, searchUsers);
+router.get("/search", authJWT, searchUsers);
 
 export default router;

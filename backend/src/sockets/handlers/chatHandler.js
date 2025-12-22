@@ -18,14 +18,5 @@ export const chatHandler = (io, socket) => {
     console.log(`New message in chat ${chatId} from ${socket.user.username}`);
   };
 
-  const handleTyping = ({ chatId, isTyping }) => {
-    socket.to(`chat_${chatId}`).emit("userTyping", {
-      userId: socket.user._id,
-      username: socket.user.username,
-      isTyping,
-    });
-  };
-
   socket.on("newMessage", handleNewMessage);
-  socket.on("typing", handleTyping);
 };

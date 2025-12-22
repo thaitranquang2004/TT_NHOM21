@@ -18,8 +18,12 @@ const Register = () => {
       .min(3, "Min 3 characters"),
     password: yup
       .string()
-      .required("Password required")
-      .min(8, "Min 8 characters"),
+      .required("Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/,
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+      ),
     fullName: yup.string().required("Full Name required"),
     email: yup
       .string()
@@ -101,7 +105,7 @@ const Register = () => {
         <div className="input-group">
           <input
             type="password"
-            placeholder="Password (min 8)"
+            placeholder="Password (min 8, A-z, 0-9, !@#$)"
             {...register("password")}
             className={`login-input ${errors.password ? "error" : ""}`}
           />
