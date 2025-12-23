@@ -5,8 +5,6 @@ import User from "../models/User.js";
 export const createChat = async (req, res) => {
   try {
     const { type, participants, name } = req.body;
-    // if (type === "group" && (!name || participants.length < 2))
-    //   return res.status(400).json({ message: "Invalid group" });
 
     // Enforce friendship for direct chats
     if (type === "direct") {

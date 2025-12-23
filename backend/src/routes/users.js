@@ -10,10 +10,8 @@ import {
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
-// Get profile
 router.get("/profile", authJWT, getProfile);
 
-// Update profile
 router.put(
   "/profile",
   authJWT,
@@ -21,7 +19,6 @@ router.put(
   updateProfile
 );
 
-// Search users
 router.get("/search", authJWT, searchUsers);
 
 export default router;

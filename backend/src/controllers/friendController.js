@@ -19,7 +19,7 @@ export const sendRequest = async (req, res) => {
 
     // Emit Socket
     req.io
-      ?.to(receiverId.toString())
+      ?.to(`user_${receiverId}`)
       .emit("friendRequest", { requestId: request._id });
 
     res.json({ message: "Sent", requestId: request._id });
@@ -60,7 +60,7 @@ export const acceptRequest = async (req, res) => {
     });
 
     req.io
-      ?.to(request.sender.toString())
+      ?.to(`user_${request.sender}`)
       .emit("friendAccepted", { requestId: request._id });
 
     res.json({ message: "Accepted" });
@@ -76,11 +76,10 @@ export const declineRequest = async (req, res) => {
     if (!request || request.receiver.toString() !== req.user._id.toString())
       return res.status(404).json({ message: "Not found" });
 
-    request.status = "rejected";
-    await request.save();
+    await FriendRequest.findByIdAndDelete(req.params.requestId);
 
     req.io
-      ?.to(request.sender.toString())
+      ?.to(`user_${request.sender}`)
       .emit("friendDeclined", { requestId: request._id });
 
     res.json({ message: "Declined" });

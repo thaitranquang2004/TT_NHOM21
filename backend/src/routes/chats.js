@@ -8,13 +8,10 @@ import {
 
 const router = express.Router();
 
-// Create chat
 router.post("/create", authJWT, createChat);
 
-// List chats
 router.get("/", authJWT, listChats);
 
-// Get chat details
 router.get("/:chatId", authJWT, getChatDetails);
 
 export default router;

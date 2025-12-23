@@ -10,16 +10,12 @@ import {
 
 const router = express.Router();
 
-// Register: Gắn middleware validate + controller
 router.post("/register", register);
 
-// Login: Gắn middleware + controller
 router.post("/login", login);
 
-// Logout: Gắn authJWT + controller
 router.post("/logout", authJWT, logout);
 
-// Refresh: Không cần authJWT (dùng cookie), gọi controller
 router.post("/refresh", refreshToken);
 
 export default router;

@@ -25,8 +25,8 @@ const Friends = ({ onSelectChat }) => {
     checkAuth();
   }, [navigate]);
 
-  const fetchFriends = async () => {
-    setLoading(true);
+  const fetchFriends = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError("");
     try {
       const [friendsRes, requestsRes] = await Promise.all([
@@ -55,13 +55,12 @@ const Friends = ({ onSelectChat }) => {
     if (socket) {
       const handleFriendRequest = (data) => {
         console.log("New friend request", data);
-        // Refresh lists when a new request comes in
-        fetchFriends();
+        fetchFriends(true);
       };
 
       const handleFriendAccepted = (data) => {
         console.log("Friend request accepted", data);
-        fetchFriends();
+        fetchFriends(true);
       };
 
       socket.on("friendRequest", handleFriendRequest);
