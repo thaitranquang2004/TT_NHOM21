@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../utils/api";
 import { useSocket } from "../context/SocketContext";
-import { Send } from "lucide-react";
+import { Send, MoreVertical } from "lucide-react";
 import "./ChatWindow.css";
 
 const ChatWindow = ({ chatId }) => {
@@ -11,6 +11,9 @@ const ChatWindow = ({ chatId }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const messagesEndRef = useRef(null);
   const { socket } = useSocket();
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editContent, setEditContent] = useState("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,6 +87,12 @@ const ChatWindow = ({ chatId }) => {
     }
   }, [chatId, socket]);
 
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenuId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
@@ -102,6 +111,41 @@ const ChatWindow = ({ chatId }) => {
     } catch (error) {
       console.error("Reaction failed", error);
     }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm("Are you sure you want to delete this message?")) return;
+    try {
+      await api.delete(`/messages/${messageId}`);
+      setActiveMenuId(null);
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert("Failed to delete message");
+    }
+  };
+
+  const startEditing = (msg) => {
+    setEditingMessageId(msg._id);
+    setEditContent(msg.content);
+    setActiveMenuId(null);
+  };
+
+  const handleEditMessage = async (e) => {
+    e.preventDefault();
+    if (!editContent.trim()) return;
+    try {
+      await api.put(`/messages/${editingMessageId}`, { content: editContent });
+      setEditingMessageId(null);
+      setEditContent("");
+    } catch (error) {
+      console.error("Edit failed", error);
+      alert("Failed to edit message");
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingMessageId(null);
+    setEditContent("");
   };
 
   // Fetch chat details
@@ -158,21 +202,65 @@ const ChatWindow = ({ chatId }) => {
           const isSent =
             msg.sender._id === currentUser?._id ||
             msg.sender === currentUser?._id;
-          const senderName =
-            msg.sender.username || msg.sender.fullName || "User";
+          const senderName = msg.sender.username || msg.sender.fullName || "User";
 
           return (
             <div
               key={msg._id || msg.id}
-              className={`message-group ${isSent ? "sent" : "received"}`}
+              className={`message-group ${isSent ? "sent" : "received"} ${
+                activeMenuId === msg._id ? "menu-active" : ""
+              }`}
             >
               <div className="message-bubble-container">
-                <div className="message-bubble">
-                  {/* Ensure content is string */}
-                  {typeof msg.content === "string"
-                    ? msg.content
-                    : JSON.stringify(msg.content)}
-                </div>
+                {editingMessageId === msg._id ? (
+                  <form className="edit-message-form" onSubmit={handleEditMessage}>
+                    <input
+                      className="edit-message-input"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="edit-actions">
+                      <button type="submit" className="edit-save">Save</button>
+                      <button type="button" className="edit-cancel" onClick={cancelEditing}>Cancel</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    {isSent && (
+                      <div className="message-options">
+                        <button
+                          className="options-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(activeMenuId === msg._id ? null : msg._id);
+                          }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {activeMenuId === msg._id && (
+                          <div className="message-menu">
+                            <button onClick={() => startEditing(msg)}>Edit</button>
+                            <button onClick={() => handleDeleteMessage(msg._id)} className="delete-option">
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="message-bubble">
+                      {/* Ensure content is string */}
+                      {typeof msg.content === "string"
+                        ? msg.content
+                        : JSON.stringify(msg.content)}
+                      {msg.isEdited && <span className="edited-tag">(edited)</span>}
+                    </div>
+
+                    
+                  </>
+                )}
+
                 <div className="reaction-actions">
                   {["👍", "❤️", "😂", "😮", "😢", "😡"].map((emoji) => (
                     <button
