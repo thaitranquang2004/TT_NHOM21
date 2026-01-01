@@ -35,17 +35,22 @@ export const getMessages = async (req, res) => {
       .skip(parseInt(offset))
       .limit(parseInt(limit));
 
-    // Decrypt messages
-    const decryptedMessages = messages.map((msg) => {
+    // Smart decrypt - handle both encrypted and plain text
+    const processedMessages = messages.map((msg) => {
       const msgObj = msg.toObject();
-      if (msgObj.type === "text") {
-        msgObj.content = decryptMessage(msgObj.content);
+      if (msgObj.type === "text" && msgObj.content) {
+        // Try to decrypt - if it fails or returns empty, use original
+        const decrypted = decryptMessage(msgObj.content);
+        if (decrypted && decrypted.length > 0 && decrypted !== msgObj.content) {
+          msgObj.content = decrypted;
+        }
+        // If decryption failed or returned same/empty, keep original (it's probably plain text)
       }
       return msgObj;
     });
 
     const hasMore = messages.length === parseInt(limit);
-    res.json({ messages: decryptedMessages.reverse(), hasMore });
+    res.json({ messages: processedMessages.reverse(), hasMore });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }

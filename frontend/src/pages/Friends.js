@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useSocket } from "../context/SocketContext";
 import "./Friends.css";
+import { UserMinus } from "lucide-react";
 
 const Friends = ({ onSelectChat }) => {
   const [friends, setFriends] = useState([]);
@@ -25,58 +26,84 @@ const Friends = ({ onSelectChat }) => {
     checkAuth();
   }, [navigate]);
 
-  const fetchFriends = async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError("");
-    try {
-      const [friendsRes, requestsRes] = await Promise.all([
-        api.get("/friends/list"),
-        api.get("/friends/requests/incoming"),
-      ]);
-
-      setFriends(friendsRes.data.friends || []);
-      setIncomingRequests(requestsRes.data.requests || []);
-
-      const friendIds = new Set(
-        friendsRes.data.friends?.map((f) => f._id) || []
-      );
-      setMyFriendIds(friendIds);
-    } catch (error) {
-      console.error("Friends fetch error:", error);
-      setError("Failed to load friends.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Socket: Initial Load & Listeners
   useEffect(() => {
-    fetchFriends();
+    if (!socket) return;
 
-    if (socket) {
-      const handleFriendRequest = (data) => {
-        console.log("New friend request", data);
-        fetchFriends(true);
-      };
+    setLoading(true);
 
-      const handleFriendAccepted = (data) => {
-        console.log("Friend request accepted", data);
-        fetchFriends(true);
-      };
+    // Initial Fetch
+    socket.emit("getFriendsList");
+    socket.emit("getIncomingRequests");
 
-      socket.on("friendRequest", handleFriendRequest);
-      socket.on("friendAccepted", handleFriendAccepted);
+    // Listeners
+    const handleFriendsListFetched = ({ friends }) => {
+        setFriends(friends || []);
+        const ids = new Set(friends?.map(f => f._id) || []);
+        setMyFriendIds(ids);
+        setLoading(false);
+    };
 
-      return () => {
-        socket.off("friendRequest", handleFriendRequest);
-        socket.off("friendAccepted", handleFriendAccepted);
-      };
-    }
-  }, [socket]);
+    const handleIncomingRequestsFetched = ({ requests }) => {
+        setIncomingRequests(requests || []);
+        setLoading(false);
+    };
+
+    // Updates
+    const handleFriendRequestReceived = (data) => {
+        // Refresh requests
+        socket.emit("getIncomingRequests");
+    };
+
+    const handleFriendRequestAccepted = () => {
+         // Refresh both
+         socket.emit("getFriendsList");
+         socket.emit("getIncomingRequests");
+    };
+
+    const handleFriendRequestDeclined = () => {
+        socket.emit("getIncomingRequests");
+    };
+
+    const handleFriendRemoved = () => {
+         socket.emit("getFriendsList");
+    };
+
+    const handleChatCreated = ({ chatId }) => {
+        onSelectChat(chatId);
+    };
+
+    const handleError = (data) => {
+        setError(data.message || "An error occurred");
+    };
+
+
+    socket.on("friendsListFetched", handleFriendsListFetched);
+    socket.on("incomingRequestsFetched", handleIncomingRequestsFetched);
+    socket.on("friendRequestReceived", handleFriendRequestReceived);
+    socket.on("friendRequestAccepted", handleFriendRequestAccepted);
+    socket.on("friendRequestDeclined", handleFriendRequestDeclined);
+    socket.on("friendRemoved", handleFriendRemoved);
+    socket.on("chatCreated", handleChatCreated);
+    socket.on("error", handleError);
+
+    return () => {
+        socket.off("friendsListFetched", handleFriendsListFetched);
+        socket.off("incomingRequestsFetched", handleIncomingRequestsFetched);
+        socket.off("friendRequestReceived", handleFriendRequestReceived);
+        socket.off("friendRequestAccepted", handleFriendRequestAccepted);
+        socket.off("friendRequestDeclined", handleFriendRequestDeclined);
+        socket.off("friendRemoved", handleFriendRemoved);
+        socket.off("chatCreated", handleChatCreated);
+        socket.off("error", handleError);
+    };
+  }, [socket, onSelectChat]);
+
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim() === "") {
-      fetchFriends();
+       if (socket) socket.emit("getFriendsList");
       return;
     }
     setLoading(true);
@@ -84,7 +111,6 @@ const Friends = ({ onSelectChat }) => {
       const response = await api.get(
         `/users/search?query=${encodeURIComponent(searchQuery)}`
       );
-
       setFriends(response.data.users || []);
     } catch (error) {
       console.error("Search error:", error);
@@ -94,49 +120,42 @@ const Friends = ({ onSelectChat }) => {
     }
   };
 
-  const sendRequest = async (userId) => {
-    try {
-      await api.post("/friends/request", { receiverId: userId });
-      alert("Friend request sent!");
-    } catch (error) {
-      console.error("Request error:", error);
-      alert(
-        "Request failed: " + (error.response?.data?.message || "Unknown error")
-      );
+  const sendRequest = (userId) => {
+    if (socket) {
+        socket.emit("sendFriendRequest", { receiverId: userId });
+        // Optimistic UI or wait for response? Wait for response (listener) is safer but we can alert success
+        // Since we don't have a direct callback here easily without ack, 
+        // we can assume success or listen for specific 'friendRequestSent' event if we implemented it.
+        // For now, let listeners handle state updates.
     }
   };
 
-  const acceptRequest = async (requestId) => {
-    try {
-      await api.put(`/friends/request/${requestId}/accept`);
-      fetchFriends(); // Refresh lists
-    } catch (error) {
-      console.error("Accept error:", error);
-      alert("Failed to accept request");
+  const acceptRequest = (requestId) => {
+    if (socket) {
+        socket.emit("acceptFriendRequest", { requestId });
     }
   };
 
-  const declineRequest = async (requestId) => {
-    try {
-      await api.put(`/friends/request/${requestId}/decline`);
-      fetchFriends(); // Refresh lists
-    } catch (error) {
-      console.error("Decline error:", error);
-      alert("Failed to decline request");
-    }
+  const declineRequest = (requestId) => {
+     if (socket) {
+        socket.emit("declineFriendRequest", { requestId });
+     }
   };
 
-  const handleMessage = async (friendId) => {
-    try {
-      // Create or get existing chat
-      const response = await api.post("/chats/create", {
-        type: "direct",
-        participants: [friendId],
-      });
-      onSelectChat(response.data.chatId);
-    } catch (error) {
-      console.error("Failed to start chat:", error);
-      alert("Failed to start chat");
+  const handleRemoveFriend = (friendId) => {
+      if(window.confirm("Are you sure you want to remove this friend?")) {
+          if (socket) {
+              socket.emit("removeFriend", { friendId });
+          }
+      }
+  };
+
+  const handleMessage = (friendId) => {
+    if (socket) {
+        socket.emit("createChat", {
+            type: "direct",
+            participants: [friendId]
+        });
     }
   };
 
@@ -254,12 +273,23 @@ const Friends = ({ onSelectChat }) => {
 
                   <div className="friend-card-actions">
                     {myFriendIds.has(friend._id || friend.id) ? (
+                     <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                       <button
                         onClick={() => handleMessage(friend._id || friend.id)}
-                        className="button button-primary button-full"
+                        className="button button-primary"
+                        style={{ flex: 1 }}
                       >
                         Message
                       </button>
+                      <button 
+                        onClick={() => handleRemoveFriend(friend._id || friend.id)}
+                        className="button button-secondary"
+                        style={{ padding: '0 12px' }}
+                        title="Remove Friend"
+                      >
+                         <UserMinus size={18} />
+                      </button>
+                     </div>
                     ) : (
                       <button
                         onClick={() => sendRequest(friend._id || friend.id)}

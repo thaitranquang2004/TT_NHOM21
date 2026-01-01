@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { userHandler } from "./handlers/userHandler.js";
 import { chatHandler } from "./handlers/chatHandler.js";
+import { friendHandler } from "./handlers/friendHandler.js";
 
 export const setupSockets = (io) => {
   // Middleware for authentication
@@ -36,6 +37,7 @@ export const setupSockets = (io) => {
     // Initialize handlers
     const { handleUserOffline, handleJoinMyChats } = userHandler(io, socket);
     chatHandler(io, socket);
+    friendHandler(io, socket);
 
     // Auto-join chats sau connect
     handleJoinMyChats();

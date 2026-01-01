@@ -260,6 +260,7 @@
   align-items: center;
   margin: 0 8px;
   opacity: 0;
+  visibility: hidden; /* Ensure it's not clickable when hidden */
   transform: translateX(5px);
   transition: all 0.2s ease;
   z-index: 10;
@@ -267,6 +268,7 @@
 
 .message-bubble-container:hover .message-options {
   opacity: 1;
+  visibility: visible;
   transform: translateX(0);
 }
 

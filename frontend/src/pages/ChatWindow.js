@@ -78,6 +78,10 @@ const ChatWindow = ({ chatId }) => {
         );
       });
 
+      // Mark as read when entering/socket connects
+      socket.emit("markChatRead", { chatId });
+      socket.emit("joinChat", chatId); // Join the chat room for real-time updates
+
       return () => {
         socket.off("newMessage", handleNewMessage);
         socket.off("messageEdited");
@@ -93,34 +97,29 @@ const ChatWindow = ({ chatId }) => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const sendMessage = async (e) => {
+  const sendMessage = (e) => {
     e.preventDefault();
     if (!content.trim()) return;
-    try {
-      await api.post("/messages/send", { chatId, content });
+
+    if (socket) {
+      socket.emit("sendMessage", { chatId, content });
       setContent("");
-    } catch (error) {
-      console.error("Send failed", error);
-      alert("Failed to send message");
+    } else {
+      alert("Connection lost. Please try again.");
     }
   };
 
-  const handleReaction = async (messageId, type) => {
-    try {
-      await api.post(`/messages/${messageId}/react`, { type });
-    } catch (error) {
-      console.error("Reaction failed", error);
+  const handleReaction = (messageId, type) => {
+    if (socket) {
+      socket.emit("reactMessage", { messageId, type });
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = (messageId) => {
     if (!window.confirm("Are you sure you want to delete this message?")) return;
-    try {
-      await api.delete(`/messages/${messageId}`);
+    if (socket) {
+      socket.emit("deleteMessage", { messageId });
       setActiveMenuId(null);
-    } catch (error) {
-      console.error("Delete failed", error);
-      alert("Failed to delete message");
     }
   };
 
@@ -130,16 +129,14 @@ const ChatWindow = ({ chatId }) => {
     setActiveMenuId(null);
   };
 
-  const handleEditMessage = async (e) => {
+  const handleEditMessage = (e) => {
     e.preventDefault();
     if (!editContent.trim()) return;
-    try {
-      await api.put(`/messages/${editingMessageId}`, { content: editContent });
+    
+    if (socket) {
+      socket.emit("editMessage", { messageId: editingMessageId, content: editContent });
       setEditingMessageId(null);
       setEditContent("");
-    } catch (error) {
-      console.error("Edit failed", error);
-      alert("Failed to edit message");
     }
   };
 
@@ -202,7 +199,6 @@ const ChatWindow = ({ chatId }) => {
           const isSent =
             msg.sender._id === currentUser?._id ||
             msg.sender === currentUser?._id;
-          const senderName = msg.sender.username || msg.sender.fullName || "User";
 
           return (
             <div
@@ -313,7 +309,7 @@ const ChatWindow = ({ chatId }) => {
             type="submit"
             className="send-button"
             disabled={!content.trim()}
-            style={{ marginLeft: "10px", height: "40px", weight: "40px"}}
+            style={{ marginLeft: "10px", height: "40px", width: "40px"}}
           >
             <Send size={18} />
           </button>

@@ -55,7 +55,7 @@ const Profile = () => {
         formData.append("avatar", selectedFile);
       }
 
-      const response = await api.put("/users/profile", formData, {
+      await api.put("/users/profile", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
