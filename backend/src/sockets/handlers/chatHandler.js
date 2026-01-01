@@ -222,12 +222,14 @@ export const chatHandler = (io, socket) => {
         });
         await chat.save();
         
-         // If it's a new chat, we might want to notify the other participant immediately
-         // so it appears in their list? Or wait for first message? 
-         // For now, let's just ensure the creator gets the ID.
+        // Notify all participants about the new chat
+        chat.participants.forEach(pId => {
+            io.to(`user_${pId}`).emit("chatCreated", { chatId: chat._id });
+        });
+      } else {
+        // Chat already exists, just notify the creator
+        socket.emit("chatCreated", { chatId: chat._id });
       }
-
-      socket.emit("chatCreated", { chatId: chat._id });
 
     } catch (err) {
       console.error("Socket createChat error:", err);
