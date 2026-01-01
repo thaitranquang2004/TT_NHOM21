@@ -251,6 +251,48 @@ export const chatHandler = (io, socket) => {
     }
   };
 
+  const handleGetMessages = async (data) => {
+    try {
+        const { chatId } = data;
+        const userId = socket.user._id;
+        
+        // ensure user is in chat
+        const chat = await Chat.findById(chatId);
+        if (!chat || !chat.participants.includes(userId)) {
+             return socket.emit("error", { message: "Not authorized" });
+        }
+
+        const messages = await Message.find({ chat: chatId, deletedAt: null })
+            .populate("sender", "username fullName avatar")
+            .sort({ createdAt: -1 })
+            .limit(50);
+        
+        socket.emit("messagesFetched", { chatId, messages: messages.reverse() });
+    } catch (err) {
+        console.error("Socket getMessages error:", err);
+        socket.emit("error", { message: "Failed to fetch messages" });
+    }
+  };
+
+  const handleGetChatDetails = async (data) => {
+    try {
+        const { chatId } = data;
+        const userId = socket.user._id;
+        
+        const chat = await Chat.findById(chatId)
+            .populate("participants", "username fullName avatar email");
+            
+        if (!chat || !chat.participants.some(p => p._id.toString() === userId.toString())) {
+             return socket.emit("error", { message: "Not authorized" });
+        }
+
+        socket.emit("chatDetailsFetched", { chat });
+    } catch (err) {
+        console.error("Socket getChatDetails error:", err);
+        socket.emit("error", { message: "Failed to fetch chat details" });
+    }
+  };
+
   socket.on("sendMessage", handleSendMessage);
   socket.on("editMessage", handleEditMessage);
   socket.on("deleteMessage", handleDeleteMessage);
@@ -260,4 +302,6 @@ export const chatHandler = (io, socket) => {
   socket.on("markChatRead", handleMarkChatRead);
   socket.on("createChat", handleCreateChat);
   socket.on("getChats", handleGetChats);
+  socket.on("getMessages", handleGetMessages);
+  socket.on("getChatDetails", handleGetChatDetails);
 };

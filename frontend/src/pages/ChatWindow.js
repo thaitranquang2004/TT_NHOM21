@@ -35,20 +35,47 @@ const ChatWindow = ({ chatId }) => {
   useEffect(() => {
     if (!chatId) return;
 
-    const fetchMessages = async () => {
-      try {
-        const response = await api.get(`/messages/${chatId}`);
-        setMessages(response.data.messages);
-        scrollToBottom();
-      } catch (error) {
-        console.error("Messages load failed", error);
-      }
-    };
-
-    fetchMessages();
-
     if (socket) {
-      const handleNewMessage = (msg) => {
+      // Clear previous messages and fetch new ones
+      setMessages([]);
+      socket.emit("getMessages", { chatId });
+      socket.emit("getChatDetails", { chatId });
+
+      const handleMessagesFetched = (data) => {
+          if (data.chatId === chatId) {
+             setMessages(data.messages);
+             scrollToBottom();
+          }
+      };
+
+      const handleChatDetailsFetched = (data) => {
+          if (data.chat._id === chatId) {
+              // Determine name
+              let name = data.chat.name;
+              if (data.chat.type === "direct" || !name) {
+                const other = data.chat.participants.find(
+                  (p) => p._id !== currentUser?._id
+                );
+                name = other ? other.fullName || other.username : "Chat";
+              }
+              setChatInfo({ ...data.chat, name });
+          }
+      };
+
+      socket.on("messagesFetched", handleMessagesFetched);
+      socket.on("chatDetailsFetched", handleChatDetailsFetched);
+
+      return () => {
+          socket.off("messagesFetched", handleMessagesFetched);
+          socket.off("chatDetailsFetched", handleChatDetailsFetched);
+      };
+    }
+  }, [chatId, socket, currentUser]);
+
+  useEffect(() => {
+    if (!socket || !chatId) return;
+
+    const handleNewMessage = (msg) => {
         // Check if message belongs to current chat
         if (msg.chat === chatId || msg.chatId === chatId) {
           setMessages((prev) => [...prev, msg]);
@@ -88,7 +115,6 @@ const ChatWindow = ({ chatId }) => {
         socket.off("messageDeleted");
         socket.off("messageReactionUpdate");
       };
-    }
   }, [chatId, socket]);
 
   useEffect(() => {
@@ -144,33 +170,6 @@ const ChatWindow = ({ chatId }) => {
     setEditingMessageId(null);
     setEditContent("");
   };
-
-  // Fetch chat details
-  useEffect(() => {
-    if (!chatId) return;
-    const fetchChatDetails = async () => {
-      try {
-        const res = await api.get("/chats");
-        const found = res.data.chats.find(
-          (c) => c._id === chatId || c.id === chatId
-        );
-        if (found) {
-          // Determine name
-          let name = found.name;
-          if (found.type === "direct" || !name) {
-            const other = found.participants.find(
-              (p) => p._id !== currentUser?._id
-            );
-            name = other ? other.fullName || other.username : "Chat";
-          }
-          setChatInfo({ ...found, name });
-        }
-      } catch (err) {
-        console.error("Failed to fetch chat details", err);
-      }
-    };
-    if (currentUser) fetchChatDetails();
-  }, [chatId, currentUser]);
 
   if (!chatId) {
     return (
