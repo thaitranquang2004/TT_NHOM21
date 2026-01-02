@@ -123,10 +123,6 @@ const Friends = ({ onSelectChat }) => {
   const sendRequest = (userId) => {
     if (socket) {
         socket.emit("sendFriendRequest", { receiverId: userId });
-        // Optimistic UI or wait for response? Wait for response (listener) is safer but we can alert success
-        // Since we don't have a direct callback here easily without ack, 
-        // we can assume success or listen for specific 'friendRequestSent' event if we implemented it.
-        // For now, let listeners handle state updates.
     }
   };
 

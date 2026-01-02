@@ -36,7 +36,6 @@ const ChatWindow = ({ chatId }) => {
     if (!chatId) return;
 
     if (socket) {
-      // Clear previous messages and fetch new ones
       setMessages([]);
       socket.emit("getMessages", { chatId });
       socket.emit("getChatDetails", { chatId });
@@ -76,7 +75,6 @@ const ChatWindow = ({ chatId }) => {
     if (!socket || !chatId) return;
 
     const handleNewMessage = (msg) => {
-        // Check if message belongs to current chat
         if (msg.chat === chatId || msg.chatId === chatId) {
           setMessages((prev) => [...prev, msg]);
           scrollToBottom();
@@ -105,9 +103,8 @@ const ChatWindow = ({ chatId }) => {
         );
       });
 
-      // Mark as read when entering/socket connects
       socket.emit("markChatRead", { chatId });
-      socket.emit("joinChat", chatId); // Join the chat room for real-time updates
+      socket.emit("joinChat", chatId);
 
       return () => {
         socket.off("newMessage", handleNewMessage);

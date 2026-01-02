@@ -36,13 +36,6 @@ app.use(
   })
 );
 
-// Disable Helmet CSP
-// app.use(
-//   helmet({
-//     contentSecurityPolicy: false,
-//   })
-// );
-
 // Socket.IO - Bare minimum config
 const io = new Server(server, {
   cors: {
@@ -76,15 +69,9 @@ app.use((req, res, next) => {
 // Routes
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
-import friendRoutes from "./routes/friends.js";
-import chatRoutes from "./routes/chats.js";
-import messageRoutes from "./routes/messages.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/friends", friendRoutes);
-app.use("/api/chats", chatRoutes);
-app.use("/api/messages", messageRoutes);
 
 // Socket setup
 import("./sockets/socketManager.js").then(({ setupSockets }) => {

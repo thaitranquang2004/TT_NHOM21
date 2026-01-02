@@ -1,6 +1,20 @@
 import Message from "../../models/Message.js";
 import Chat from "../../models/Chat.js";
 import User from "../../models/User.js";
+import CryptoJS from "crypto-js";
+
+// Helper to decrypt - handle both encrypted and plain text
+const decryptMessage = (content) => {
+  try {
+    const bytes = CryptoJS.AES.decrypt(
+      content,
+      process.env.ENCRYPT_SECRET || "default_secret"
+    );
+    return bytes.toString(CryptoJS.enc.Utf8) || content;
+  } catch (e) {
+    return content;
+  }
+};
 
 export const chatHandler = (io, socket) => {
   const handleSendMessage = async (data) => {
@@ -41,7 +55,7 @@ export const chatHandler = (io, socket) => {
         id: message._id,
         chat: chatId,
         content: content,
-        sender: populatedMessage.sender, // Ensure sender object structure matches frontend expectation
+        sender: populatedMessage.sender,
         type,
         createdAt: message.createdAt,
       };
@@ -187,10 +201,6 @@ export const chatHandler = (io, socket) => {
         $unset: { [`unreadCounts.${chatId}`]: "" }
       });
 
-      // Fetch updated user to send back correct state
-      // (Optional, or just send { chatId, count: 0 })
-      // For simplicity/accuracy, let's just tell client to refresh or send the update.
-      // Easiest integration with existing Chats.js which refreshes on events:
       socket.emit("unreadCountsUpdated", { chatId });
 
     } catch (err) {
@@ -267,7 +277,19 @@ export const chatHandler = (io, socket) => {
             .sort({ createdAt: -1 })
             .limit(50);
         
-        socket.emit("messagesFetched", { chatId, messages: messages.reverse() });
+        // Smart decrypt - handle both encrypted and plain text
+        const processedMessages = messages.map((msg) => {
+          const msgObj = msg.toObject();
+          if (msgObj.type === "text" && msgObj.content) {
+            const decrypted = decryptMessage(msgObj.content);
+            if (decrypted && decrypted.length > 0 && decrypted !== msgObj.content) {
+              msgObj.content = decrypted;
+            }
+          }
+          return msgObj;
+        });
+        
+        socket.emit("messagesFetched", { chatId, messages: processedMessages.reverse() });
     } catch (err) {
         console.error("Socket getMessages error:", err);
         socket.emit("error", { message: "Failed to fetch messages" });

@@ -12,11 +12,9 @@ const Chats = ({ onSelectChat, activeChatId }) => {
 
   const fetchData = async () => {
     try {
-      // Still fetch user profile via API for now, or could use socket too
       const userRes = await api.get("/users/profile");
       setCurrentUser(userRes.data.user);
       
-      // Fetch chats via socket
       if (socket) {
           socket.emit("getChats");
       }
@@ -27,7 +25,7 @@ const Chats = ({ onSelectChat, activeChatId }) => {
 
   useEffect(() => {
     fetchData();
-  }, [socket]); // Add socket dependency to ensure we emit getChats when connected
+  }, [socket]); 
 
   useEffect(() => {
     if (socket) {
@@ -37,16 +35,13 @@ const Chats = ({ onSelectChat, activeChatId }) => {
 
       const handleRefresh = () => {
           socket.emit("getChats");
-          // Update profile too to get fresh unread counts
           api.get("/users/profile").then(res => setCurrentUser(res.data.user)).catch(console.error);
       };
       
       const handleChatDeleted = (data) => {
-          // Refresh chat list
           socket.emit("getChats");
           api.get("/users/profile").then(res => setCurrentUser(res.data.user)).catch(console.error);
           
-          // If the deleted chat is the active one, reset to null
           if (data?.chatId && data.chatId === activeChatId) {
               onSelectChat(null);
           }
@@ -54,7 +49,7 @@ const Chats = ({ onSelectChat, activeChatId }) => {
       
       socket.on("chatsFetched", handleChatsFetched);
       socket.on("newMessage", handleRefresh);
-      socket.on("chatDeleted", handleChatDeleted); // Use separate handler
+      socket.on("chatDeleted", handleChatDeleted);
       socket.on("unreadCountsUpdated", handleRefresh);
       socket.on("chatCreated", handleRefresh);
       
@@ -73,7 +68,6 @@ const Chats = ({ onSelectChat, activeChatId }) => {
       if(window.confirm("Delete this chat? This will remove all messages permanently.")) {
           if(socket) {
               socket.emit("deleteChat", { chatId });
-              // If deleting the active chat, reset immediately
               if (chatId === activeChatId) {
                   onSelectChat(null);
               }
